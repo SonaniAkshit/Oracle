@@ -1,0 +1,18 @@
+Recommended sequence
+Sequences: Create sequences first to generate unique IDs for your tables, especially primary key columns that don't auto-increment.
+
+Tables (without Foreign Keys): Create your core tables that don't have any incoming foreign key dependencies yet. This will likely be your base tables that represent the main entities of your system (e.g., Events, Users).
+
+Primary Keys: Define the primary keys for your tables using the sequences you created earlier.
+
+Tables (with Foreign Keys): Create tables that have foreign key dependencies on other tables. This ensures that when you define the foreign key constraints, the referenced parent tables already exist with their primary keys defined.
+
+Foreign Keys: Define the foreign key constraints to enforce referential integrity and maintain relationships between your tables. This also prevents incorrect data from being entered into the database.
+
+Functions: Create functions to encapsulate reusable logic or calculations that will be used in triggers, procedures, or SQL queries.
+
+Procedures: Create procedures to handle more complex business logic, such as inserting new bookings or cancelling existing ones.
+
+Triggers: Define triggers to automatically execute specific actions or enforce business rules when data changes in your tables (e.g., updating seat availability after a booking).
+
+Clusters (Optional): If needed for performance optimization, consider creating clusters to store related data together in the same physical block, speeding up joins or common queries. Note that this is a more advanced technique and may not be required for smaller projects. 
