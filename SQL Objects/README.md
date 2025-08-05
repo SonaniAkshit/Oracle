@@ -309,3 +309,10 @@ Just say:
 **"Give me full code for \[project name]"**
 
 --- -->
+
+<!-- ```sql
+SELECT 'COLUMN ' || column_name || ' FORMAT A20' AS format_command
+FROM user_tab_columns
+WHERE table_name = 'PRODUCTS';
+
+``` -->
