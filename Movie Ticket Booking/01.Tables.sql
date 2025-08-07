@@ -137,3 +137,8 @@ STORAGE (
     MINEXTENTS 1
     MAXEXTENTS 2
 );
+
+
+--- select all table names in schema
+SELECT 'TABLE NAME:  "' || table_name || '"' AS Tables
+FROM user_tables;
