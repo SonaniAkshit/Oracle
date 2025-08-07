@@ -316,3 +316,6 @@ FROM user_tab_columns
 WHERE table_name = 'PRODUCTS';
 
 ``` -->
+
+<!-- SELECT 'DROP TABLE "' || table_name || '" CASCADE CONSTRAINTS;' AS drop_stmt
+FROM user_tables; -->
