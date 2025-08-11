@@ -1,321 +1,204 @@
-## 🧭 **Oracle SQL & PL/SQL Object Creation – Full Roadmap**
-
-### 🎯 Goal:
-
-Become capable of building a **complete Oracle database system**, including **tables, views, sequences, packages, procedures, triggers, functions, exceptions, etc.**
+## **📚 Full Roadmap – Oracle SQL & SQL\*Plus (Scratch → Advanced)**
 
 ---
 
-## 📍**PHASE 1: Core SQL Object Creation**
+### **PHASE 1 – Foundations of SQL**
 
-### 🔹 1. SQL Basics (Foundation)
+**Goal:** Be able to write basic queries and understand database concepts.
+**Topics:**
 
-* SQL Syntax (DDL, DML, DCL, TCL)
-* Data types: `VARCHAR2`, `NUMBER`, `DATE`, `CLOB`, `BLOB`, etc.
-* NULL behavior, literals, case sensitivity
+1. **Introduction to Databases**
 
----
+   * What is a DB, DBMS, RDBMS
+   * Oracle architecture basics (CDB, PDB in 21c)
+   * Schema vs user
+2. **SQL\*Plus Basics**
 
-### 🔹 2. Tables
+   * Connecting to Oracle (`sqlplus`, `conn`, `@service_name`)
+   * SQL vs SQL\*Plus commands (`SHOW`, `DESCRIBE`, `COLUMN`, `SET LINESIZE`, etc.)
+3. **Basic Data Retrieval**
 
-* `CREATE TABLE`, `ALTER`, `DROP`, `TRUNCATE`
-* Constraints:
+   * `SELECT`, `FROM`, `WHERE`, `ORDER BY`
+   * Aliases (`AS`)
+   * Filtering with `BETWEEN`, `IN`, `LIKE`, `IS NULL`
+4. **Basic Functions**
 
-  * `PRIMARY KEY`, `UNIQUE`
-  * `NOT NULL`, `CHECK`
-  * `FOREIGN KEY`
+   * String: `UPPER`, `LOWER`, `SUBSTR`, `TRIM`
+   * Number: `ROUND`, `TRUNC`, `MOD`
+   * Date: `SYSDATE`, `ADD_MONTHS`, `MONTHS_BETWEEN`
+5. **Basic Operators**
 
-🔧 Example:
-
-```sql
-CREATE TABLE students (
-  id NUMBER PRIMARY KEY,
-  name VARCHAR2(100) NOT NULL,
-  age NUMBER CHECK (age >= 18)
-);
-```
-
----
-
-### 🔹 3. Sequences
-
-* `CREATE SEQUENCE`, `NEXTVAL`, `CURRVAL`
-* Options: `START WITH`, `INCREMENT BY`, `CACHE`, `CYCLE`
-
-🔧 Example:
-
-```sql
-CREATE SEQUENCE student_seq START WITH 1 INCREMENT BY 1;
-```
+   * Arithmetic (`+ - * /`)
+   * Comparison (`=, <, >, !=`)
+   * Logical (`AND`, `OR`, `NOT`)
 
 ---
 
-### 🔹 4. Indexes
+### **PHASE 2 – Data Manipulation Language (DML)**
 
-* `CREATE INDEX`, `UNIQUE`, `COMPOSITE`, `BITMAP`
+**Goal:** Insert, update, and delete data.
+**Topics:**
 
-🔧 Example:
+1. `INSERT`
+2. `UPDATE`
+3. `DELETE`
+4. `MERGE` (UPSERT)
+5. Transaction control:
 
-```sql
-CREATE INDEX idx_student_name ON students(name);
-```
-
----
-
-### 🔹 5. Views
-
-* `CREATE VIEW`, `WITH CHECK OPTION`, `READ ONLY`
-* Materialized Views (Advanced)
-
-🔧 Example:
-
-```sql
-CREATE VIEW adult_students AS 
-SELECT * FROM students WHERE age >= 18;
-```
+   * `COMMIT`, `ROLLBACK`, `SAVEPOINT`
 
 ---
 
-### 🔹 6. Synonyms
+### **PHASE 3 – Data Definition Language (DDL)**
 
-* `CREATE SYNONYM` (Private / Public)
+**Goal:** Create and modify database structures.
+**Oracle SQL Objects Covered Here:**
 
-🔧 Example:
+1. **Tables**
 
-```sql
-CREATE SYNONYM stu FOR students;
-```
+   * `CREATE TABLE`, `ALTER TABLE`, `DROP TABLE`
+   * Data types (Oracle-specific: `VARCHAR2`, `NUMBER`, `DATE`, `CLOB`, `BLOB`)
+   * Constraints:
 
----
+     * `PRIMARY KEY`
+     * `FOREIGN KEY`
+     * `UNIQUE`
+     * `NOT NULL`
+     * `CHECK`
+2. **Sequences**
 
-### 🔹 7. Clusters (Optional – Advanced)
+   * `CREATE SEQUENCE`, `NEXTVAL`, `CURRVAL`
+   * Cache & no cache options
+3. **Indexes**
 
-* Cluster tables for performance
+   * B-tree index
+   * Unique index
+   * Composite index
+   * Function-based index
+4. **Views**
 
-🔧 Example:
+   * Simple view
+   * Complex view
+   * `WITH CHECK OPTION`, `WITH READ ONLY`
+5. **Synonyms**
 
-```sql
-CREATE CLUSTER dept_cluster (dept_id NUMBER);
-```
-
----
-
-## 📍**PHASE 2: PL/SQL Objects (Procedural Programming)**
-
-### 🔹 8. Anonymous PL/SQL Block (Starting Point)
-
-```sql
-BEGIN
-  DBMS_OUTPUT.PUT_LINE('Hello, PL/SQL!');
-END;
-```
-
----
-
-### 🔹 9. Stored Procedures
-
-* Accepts parameters
-* Encapsulate business logic
-
-🔧 Example:
-
-```sql
-CREATE OR REPLACE PROCEDURE add_student (
-  p_id NUMBER, p_name VARCHAR2
-) AS
-BEGIN
-  INSERT INTO students VALUES(p_id, p_name, 18);
-END;
-```
+   * Public & private synonyms
+6. **Clusters** (optional, advanced use case in Oracle)
 
 ---
 
-### 🔹 10. Functions
+### **PHASE 4 – Data Query Mastery**
 
-* Must return a value
-* Can be used in SQL queries
+**Goal:** Be proficient in complex queries.
+**Topics:**
 
-🔧 Example:
+1. **Joins**
 
-```sql
-CREATE OR REPLACE FUNCTION get_student_age(p_id NUMBER)
-RETURN NUMBER IS
-  v_age NUMBER;
-BEGIN
-  SELECT age INTO v_age FROM students WHERE id = p_id;
-  RETURN v_age;
-END;
-```
+   * Inner, Left Outer, Right Outer, Full Outer
+   * Cross join
+   * Self join
+   * Oracle proprietary `(+)` outer join syntax
+2. **Subqueries**
 
----
+   * Single-row, multi-row, correlated
+   * `EXISTS` vs `IN`
+3. **Set Operators**
 
-### 🔹 11. Triggers
+   * `UNION`, `UNION ALL`, `INTERSECT`, `MINUS`
+4. **Grouping & Aggregation**
 
-* Automatically execute on DML events
+   * `GROUP BY`, `HAVING`
+   * Group functions: `SUM`, `AVG`, `COUNT`, `MAX`, `MIN`
+   * `ROLLUP` and `CUBE`
+5. **Analytical Functions**
 
-🔧 Types:
-
-* BEFORE/AFTER INSERT/UPDATE/DELETE
-* Statement-level / Row-level
-
-🔧 Example:
-
-```sql
-CREATE OR REPLACE TRIGGER trg_log_student
-AFTER INSERT ON students
-FOR EACH ROW
-BEGIN
-  INSERT INTO student_log VALUES(:NEW.id, SYSDATE);
-END;
-```
+   * `ROWNUM` vs `ROW_NUMBER()`
+   * `RANK`, `DENSE_RANK`
+   * `LEAD`, `LAG`
+   * `PARTITION BY`
 
 ---
 
-### 🔹 12. Packages
+### **PHASE 5 – User & Security Management**
 
-* Group of procedures, functions, variables
+**Goal:** Manage users, roles, and privileges.
+**Topics:**
 
-🔧 Example:
+1. Creating users in a PDB
+2. Granting/revoking:
 
-```sql
-CREATE OR REPLACE PACKAGE student_pkg AS
-  PROCEDURE add_student(p_id NUMBER, p_name VARCHAR2);
-  FUNCTION get_student_count RETURN NUMBER;
-END student_pkg;
-```
-
-```sql
-CREATE OR REPLACE PACKAGE BODY student_pkg AS
-  PROCEDURE add_student(p_id NUMBER, p_name VARCHAR2) IS
-  BEGIN
-    INSERT INTO students VALUES(p_id, p_name, 18);
-  END;
-
-  FUNCTION get_student_count RETURN NUMBER IS
-    v_count NUMBER;
-  BEGIN
-    SELECT COUNT(*) INTO v_count FROM students;
-    RETURN v_count;
-  END;
-END student_pkg;
-```
+   * System privileges (`CREATE TABLE`)
+   * Object privileges (`SELECT ON table_name`)
+3. Roles (`CREATE ROLE`, `GRANT role`)
+4. Quotas on tablespaces
 
 ---
 
-### 🔹 13. Cursors
+### **PHASE 6 – PL/SQL Basics**
 
-* Implicit and Explicit Cursors
-* Cursor FOR Loops
-* Parameterized Cursors
+**Goal:** Write procedural code inside Oracle.
+**Oracle Objects Covered Here:**
 
-🔧 Example:
+1. **Anonymous Blocks**
 
-```sql
-DECLARE
-  CURSOR c_students IS SELECT name FROM students;
-BEGIN
-  FOR stu IN c_students LOOP
-    DBMS_OUTPUT.PUT_LINE(stu.name);
-  END LOOP;
-END;
-```
+   * `DECLARE`, `BEGIN`, `EXCEPTION`, `END`
+2. **Variables & Constants**
+3. **Control Statements**
 
----
+   * `IF-THEN-ELSE`
+   * Loops (`LOOP`, `FOR`, `WHILE`)
+4. **Cursors**
 
-### 🔹 14. Exception Handling
-
-* Built-in Exceptions: `NO_DATA_FOUND`, `TOO_MANY_ROWS`, `ZERO_DIVIDE`
-* User-defined exceptions
-
-🔧 Example:
-
-```sql
-BEGIN
-  -- some logic
-EXCEPTION
-  WHEN NO_DATA_FOUND THEN
-    DBMS_OUTPUT.PUT_LINE('No record found.');
-END;
-```
+   * Implicit
+   * Explicit
+5. **Procedures**
+6. **Functions**
+7. **Packages**
+8. **Triggers**
+9. **Exception Handling**
 
 ---
 
-## 📍**PHASE 3: Advanced Database Objects**
+### **PHASE 7 – Advanced Oracle Features**
 
-### 🔹 15. Object Types & Tables
+**Goal:** Learn optimization, advanced object types, and performance tools.
+**Topics:**
 
-```sql
-CREATE TYPE student_type AS OBJECT (
-  id NUMBER,
-  name VARCHAR2(100)
-);
-```
+1. **Materialized Views**
 
-```sql
-CREATE TABLE student_obj_table OF student_type;
-```
+   * `REFRESH FAST` vs `REFRESH COMPLETE`
+2. **Partitioned Tables**
+3. **Global Temporary Tables**
+4. **Database Links**
+5. **Advanced Indexes**
 
----
+   * Bitmap index
+   * Reverse key index
+6. **Performance**
 
-### 🔹 16. Collections (Nested Tables, VARRAYs)
-
-```sql
-CREATE TYPE name_array AS VARRAY(10) OF VARCHAR2(50);
-```
+   * `EXPLAIN PLAN`
+   * Index usage
+   * Hints (`/*+ INDEX */`)
 
 ---
 
-### 🔹 17. Materialized Views
+### **PHASE 8 – SQL\*Plus Advanced Commands**
 
-* Snapshot data from remote or large tables
+**Goal:** Get comfortable with Oracle’s CLI environment for scripting.
+**Topics:**
 
-```sql
-CREATE MATERIALIZED VIEW mv_students
-REFRESH FAST ON COMMIT
-AS SELECT * FROM students;
-```
+1. Formatting output:
 
----
+   * `COLUMN`, `SET LINESIZE`, `SET PAGESIZE`, `TTITLE`
+2. Spooling reports:
 
-## 🔨 **Practice Project Ideas**
+   * `SPOOL file_name`
+3. Running scripts:
 
-| Project                  | Concepts Covered                    |
-| ------------------------ | ----------------------------------- |
-| 🏫 University Management | Tables, Views, Triggers, Packages   |
-| 🛒 E-Commerce System     | Sequences, Indexes, PL/SQL Triggers |
-| 📚 Library Management    | Cursors, Functions, Procedures      |
-| 🏥 Hospital Management   | Object Types, Exception Handling    |
+   * `@script.sql`
+4. Environment control:
+
+   * `SHOW ALL`
+   * `SET FEEDBACK`, `SET SERVEROUTPUT ON`
 
 ---
-<!-- 
-## 🛠️ Tools to Use
-
-* 🔹 Oracle Live SQL → [https://livesql.oracle.com](https://livesql.oracle.com)
-* 🔹 Oracle SQL Developer (GUI Tool)
-* 🔹 Oracle XE (Free local database)
-* 🔹 DBeaver (Cross-platform GUI client)
-
---- -->
-<!-- 
-## 🧠 Want Full Project Code?
-
-If you want, I can provide:
-
-* Full schema SQL (tables, sequences, views)
-* Full PL/SQL logic (triggers, procedures, etc.)
-* Use case: e.g. **University Admission System**
-
-Just say:
-**"Give me full code for \[project name]"**
-
---- -->
-
-<!-- ```sql
-SELECT 'COLUMN ' || column_name || ' FORMAT A20' AS format_command
-FROM user_tab_columns
-WHERE table_name = 'PRODUCTS';
-
-``` -->
-
-<!-- SELECT 'DROP TABLE "' || table_name || '" CASCADE CONSTRAINTS;' AS drop_stmt
-FROM user_tables; -->

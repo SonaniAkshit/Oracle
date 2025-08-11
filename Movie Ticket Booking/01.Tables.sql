@@ -141,4 +141,4 @@ STORAGE (
 
 --- select all table names in schema
 SELECT 'TABLE NAME:  "' || table_name || '"' AS Tables
-FROM user_tables;
+FROM user_tables; 
