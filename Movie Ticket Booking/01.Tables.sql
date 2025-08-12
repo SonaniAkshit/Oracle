@@ -50,7 +50,22 @@ STORAGE (
     MAXEXTENTS 2
 );
 
--- 4. `shows`
+-- 4. `screens`
+
+CREATE TABLE screens (
+    screen_id  NUMBER PRIMARY KEY,
+    theater_id NUMBER REFERENCES theaters(theater_id),
+    total_seats NUMBER NOT NULL
+)
+TABLESPACE users
+STORAGE (
+    INITIAL 10K
+    NEXT 20K
+    MINEXTENTS 1
+    MAXEXTENTS 2
+);
+
+-- 5. `shows`
 
 CREATE TABLE shows (
     show_id      NUMBER PRIMARY KEY,
@@ -68,7 +83,7 @@ STORAGE (
     MAXEXTENTS 2
 );
 
---- 5. `seats`
+--- 6. `seats`
 
 CREATE TABLE seats (
     seat_id      NUMBER PRIMARY KEY,
@@ -85,7 +100,7 @@ STORAGE (
 );
 
 
---- 6. `tickets`
+--- 7. `tickets`
 
 CREATE TABLE tickets (
     ticket_id     NUMBER PRIMARY KEY,
@@ -104,7 +119,7 @@ STORAGE (
 );
 
 
---- 7. `payments`
+--- 8. `payments`
 
 CREATE TABLE payments (
     payment_id    NUMBER PRIMARY KEY,
@@ -122,7 +137,7 @@ STORAGE (
 );
 
 
---- 8. `admins`
+--- 9. `admins`
 
 CREATE TABLE admins (
     admin_id      NUMBER PRIMARY KEY,
