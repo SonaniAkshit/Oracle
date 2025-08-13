@@ -1,3 +1,4 @@
+--- 1. customers
 create table customers (
     customer_id    number primary key,
     name           varchar2(25),
@@ -14,6 +15,7 @@ storage (
     maxextents 2
 );
 
+--- 2. movies
 create table movies (
     movie_id     number primary key,
     title        varchar2(150),
@@ -28,6 +30,7 @@ storage (
     maxextents 2
 );
 
+--- 3. screens
 create table screens (
     screen_id    number primary key,
     name         varchar2(100),
@@ -42,6 +45,7 @@ storage (
     maxextents 2
 );
 
+--- 4. shows
 create table shows (
     show_id      number primary key,
     movie_id     number references movies(movie_id),
@@ -57,6 +61,7 @@ storage (
     maxextents 2
 );
 
+--- 5. seats
 create table seats (
     seat_id      number primary key,
     screen_id    number references screens(screen_id),
@@ -70,6 +75,7 @@ storage (
     maxextents 2
 );
 
+--- 6. tickets
 create table tickets (
     ticket_id     number primary key,
     customer_id   number references customers(customer_id),
@@ -86,6 +92,7 @@ storage (
     maxextents 2
 );
 
+--- 7. payments
 create table payments (
     payment_id    number primary key,
     ticket_id     number references tickets(ticket_id),
@@ -100,6 +107,7 @@ storage (
     maxextents 2
 );
 
+--- 8. admins
 create table admins (
     admin_id      number primary key,
     username      varchar2(50) unique,

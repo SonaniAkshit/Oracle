@@ -1,3 +1,4 @@
+-- 1. v_upcoming_shows – Upcoming Show Listings
 create or replace view v_upcoming_shows as
 select s.show_id,
        m.title as movie_title,
@@ -10,6 +11,7 @@ join movies m on s.movie_id = m.movie_id
 join screens sc on s.screen_id = sc.screen_id
 where s.show_time > systimestamp;
 
+-- 2. v_available_seats – Available Seats for Each Show
 create or replace view v_available_seats as
 select sh.show_id,
        sc.name as screen_name,
@@ -22,6 +24,7 @@ left join tickets tk on tk.show_id = sh.show_id
                      and tk.ticket_status = 'BOOKED'
 where tk.ticket_id is null;
 
+-- 3. v_customer_bookings – Customer Booking History
 create or replace view v_customer_bookings as
 select c.customer_id,
        c.name as customer_name,
@@ -37,6 +40,7 @@ join movies m on sh.movie_id = m.movie_id
 join screens sc on sh.screen_id = sc.screen_id
 join seats s on tk.seat_id = s.seat_id;
 
+-- 4. v_ticket_payments – Ticket with Payment Details
 create or replace view v_ticket_payments as
 select tk.ticket_id,
        c.name as customer_name,
@@ -52,6 +56,7 @@ join movies m on sh.movie_id = m.movie_id
 join screens sc on sh.screen_id = sc.screen_id
 join payments p on tk.ticket_id = p.ticket_id;
 
+-- 5. v_sales_report – Daily Sales Summary
 create or replace view v_sales_report as
 select trunc(p.payment_date) as sale_date,
        count(p.payment_id) as total_tickets,
@@ -60,6 +65,7 @@ from payments p
 group by trunc(p.payment_date)
 order by sale_date desc;
 
+-- 6. v_movie_performance – How Movies Are Performing
 create or replace view v_movie_performance as
 select m.movie_id,
        m.title,
