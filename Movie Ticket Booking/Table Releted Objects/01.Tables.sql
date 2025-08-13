@@ -1,11 +1,9 @@
---- Tables
-
---- 1. `customers`
-
+--- 1. customers
 CREATE TABLE customers (
     customer_id    NUMBER PRIMARY KEY,
     name           VARCHAR2(25),
     email          VARCHAR2(25) UNIQUE,
+    password       VARCHAR2(20),
     phone          VARCHAR2(15),
     registered_on  DATE DEFAULT SYSDATE
 )
@@ -17,9 +15,7 @@ STORAGE (
     MAXEXTENTS 2
 );
 
-
---- 2. `movies`
-
+--- 2. movies
 CREATE TABLE movies (
     movie_id     NUMBER PRIMARY KEY,
     title        VARCHAR2(150),
@@ -34,28 +30,12 @@ STORAGE (
     MAXEXTENTS 2
 );
 
---- 3. `theaters`
-
-CREATE TABLE theaters (
-    theater_id   NUMBER PRIMARY KEY,
-    name         VARCHAR2(100),
-    location     VARCHAR2(150),
-    total_seats  NUMBER
-)
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
-);
-
--- 4. `screens`
-
+--- 3. screens 
 CREATE TABLE screens (
-    screen_id  NUMBER PRIMARY KEY,
-    theater_id NUMBER REFERENCES theaters(theater_id),
-    total_seats NUMBER NOT NULL
+    screen_id    NUMBER PRIMARY KEY,
+    name         VARCHAR2(100),       -- theater/screen name
+    location     VARCHAR2(150),       -- theater location
+    total_seats  NUMBER NOT NULL
 )
 TABLESPACE users
 STORAGE (
@@ -65,14 +45,12 @@ STORAGE (
     MAXEXTENTS 2
 );
 
--- 5. `shows`
-
+--- 4. shows
 CREATE TABLE shows (
     show_id      NUMBER PRIMARY KEY,
     movie_id     NUMBER REFERENCES movies(movie_id),
-    theater_id   NUMBER REFERENCES theaters(theater_id),
+    screen_id    NUMBER REFERENCES screens(screen_id),
     show_time    TIMESTAMP,
-    screen_no    NUMBER,
     price        NUMBER(8,2)
 )
 TABLESPACE users
@@ -83,13 +61,11 @@ STORAGE (
     MAXEXTENTS 2
 );
 
---- 6. `seats`
-
+--- 5. seats
 CREATE TABLE seats (
     seat_id      NUMBER PRIMARY KEY,
-    theater_id   NUMBER REFERENCES theaters(theater_id),
-    seat_number  VARCHAR2(10),
-    seat_type    VARCHAR2(20)  -- e.g., Regular, Premium, VIP
+    screen_id    NUMBER REFERENCES screens(screen_id),
+    seat_number  VARCHAR2(10)
 )
 TABLESPACE users
 STORAGE (
@@ -99,9 +75,7 @@ STORAGE (
     MAXEXTENTS 2
 );
 
-
---- 7. `tickets`
-
+--- 6. tickets 
 CREATE TABLE tickets (
     ticket_id     NUMBER PRIMARY KEY,
     customer_id   NUMBER REFERENCES customers(customer_id),
@@ -118,15 +92,12 @@ STORAGE (
     MAXEXTENTS 2
 );
 
-
---- 8. `payments`
-
+--- 7. payments
 CREATE TABLE payments (
     payment_id    NUMBER PRIMARY KEY,
     ticket_id     NUMBER REFERENCES tickets(ticket_id),
     amount        NUMBER(8,2),
-    payment_date  DATE DEFAULT SYSDATE,
-    payment_mode  VARCHAR2(30) -- UPI, Card, Cash, etc.
+    payment_date  DATE DEFAULT SYSDATE
 )
 TABLESPACE users
 STORAGE (
@@ -136,9 +107,7 @@ STORAGE (
     MAXEXTENTS 2
 );
 
-
---- 9. `admins`
-
+--- 8. admins
 CREATE TABLE admins (
     admin_id      NUMBER PRIMARY KEY,
     username      VARCHAR2(50) UNIQUE,
@@ -152,8 +121,3 @@ STORAGE (
     MINEXTENTS 1
     MAXEXTENTS 2
 );
-
-
---- select all table names in schema
-SELECT 'TABLE NAME:  "' || table_name || '"' AS Tables
-FROM user_tables; 
