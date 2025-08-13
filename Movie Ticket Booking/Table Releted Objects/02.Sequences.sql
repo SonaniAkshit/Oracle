@@ -1,13 +1,12 @@
-CREATE SEQUENCE seq_customers START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_movies START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_screens START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_shows START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_seats START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_tickets START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_payments START WITH 1 INCREMENT BY 1;
-CREATE SEQUENCE seq_admins START WITH 1 INCREMENT BY 1;
-
+create sequence seq_customers start with 1 increment by 1;
+create sequence seq_movies start with 1 increment by 1;
+create sequence seq_screens start with 1 increment by 1;
+create sequence seq_shows start with 1 increment by 1;
+create sequence seq_seats start with 1 increment by 1;
+create sequence seq_tickets start with 1 increment by 1;
+create sequence seq_payments start with 1 increment by 1;
+create sequence seq_admins start with 1 increment by 1;
 
 -- select all created sequences in our schema
-SELECT 'SEQUENCE NAME:  "' || sequence_name || '"' AS SEQUENCES
-FROM user_sequences;
+select 'sequence name:  "' || sequence_name || '"' as sequences
+from user_sequences;

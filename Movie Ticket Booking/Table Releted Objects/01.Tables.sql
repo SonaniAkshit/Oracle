@@ -1,123 +1,123 @@
 --- 1. customers
-CREATE TABLE customers (
-    customer_id    NUMBER PRIMARY KEY,
-    name           VARCHAR2(25),
-    email          VARCHAR2(25) UNIQUE,
-    password       VARCHAR2(20),
-    phone          VARCHAR2(15),
-    registered_on  DATE DEFAULT SYSDATE
+create table customers (
+    customer_id    number primary key,
+    name           varchar2(25),
+    email          varchar2(25) unique,
+    password       varchar2(20),
+    phone          varchar2(15),
+    registered_on  date default sysdate
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
 --- 2. movies
-CREATE TABLE movies (
-    movie_id     NUMBER PRIMARY KEY,
-    title        VARCHAR2(150),
-    duration     NUMBER,
-    release_date DATE
+create table movies (
+    movie_id     number primary key,
+    title        varchar2(150),
+    duration     number,
+    release_date date
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
---- 3. screens 
-CREATE TABLE screens (
-    screen_id    NUMBER PRIMARY KEY,
-    name         VARCHAR2(100),       -- theater/screen name
-    location     VARCHAR2(150),       -- theater location
-    total_seats  NUMBER NOT NULL
+--- 3. screens
+create table screens (
+    screen_id    number primary key,
+    name         varchar2(100),
+    location     varchar2(150),
+    total_seats  number not null
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
 --- 4. shows
-CREATE TABLE shows (
-    show_id      NUMBER PRIMARY KEY,
-    movie_id     NUMBER REFERENCES movies(movie_id),
-    screen_id    NUMBER REFERENCES screens(screen_id),
-    show_time    TIMESTAMP,
-    price        NUMBER(8,2)
+create table shows (
+    show_id      number primary key,
+    movie_id     number references movies(movie_id),
+    screen_id    number references screens(screen_id),
+    show_time    timestamp,
+    price        number(8,2)
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
 --- 5. seats
-CREATE TABLE seats (
-    seat_id      NUMBER PRIMARY KEY,
-    screen_id    NUMBER REFERENCES screens(screen_id),
-    seat_number  VARCHAR2(10)
+create table seats (
+    seat_id      number primary key,
+    screen_id    number references screens(screen_id),
+    seat_number  varchar2(10)
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
---- 6. tickets 
-CREATE TABLE tickets (
-    ticket_id     NUMBER PRIMARY KEY,
-    customer_id   NUMBER REFERENCES customers(customer_id),
-    show_id       NUMBER REFERENCES shows(show_id),
-    seat_id       NUMBER REFERENCES seats(seat_id),
-    booking_time  TIMESTAMP DEFAULT SYSTIMESTAMP,
-    ticket_status VARCHAR2(20) DEFAULT 'BOOKED'
+--- 6. tickets
+create table tickets (
+    ticket_id     number primary key,
+    customer_id   number references customers(customer_id),
+    show_id       number references shows(show_id),
+    seat_id       number references seats(seat_id),
+    booking_time  timestamp default systimestamp,
+    ticket_status varchar2(20) default 'BOOKED'
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
 --- 7. payments
-CREATE TABLE payments (
-    payment_id    NUMBER PRIMARY KEY,
-    ticket_id     NUMBER REFERENCES tickets(ticket_id),
-    amount        NUMBER(8,2),
-    payment_date  DATE DEFAULT SYSDATE
+create table payments (
+    payment_id    number primary key,
+    ticket_id     number references tickets(ticket_id),
+    amount        number(8,2),
+    payment_date  date default sysdate
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
 
 --- 8. admins
-CREATE TABLE admins (
-    admin_id      NUMBER PRIMARY KEY,
-    username      VARCHAR2(50) UNIQUE,
-    password      VARCHAR2(100),
-    created_on    DATE DEFAULT SYSDATE
+create table admins (
+    admin_id      number primary key,
+    username      varchar2(50) unique,
+    password      varchar2(100),
+    created_on    date default sysdate
 )
-TABLESPACE users
-STORAGE (
-    INITIAL 10K
-    NEXT 20K
-    MINEXTENTS 1
-    MAXEXTENTS 2
+tablespace users
+storage (
+    initial 10k
+    next 20k
+    minextents 1
+    maxextents 2
 );
