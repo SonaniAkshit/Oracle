@@ -1,81 +1,59 @@
--- 1️. 'cluster_theater_screens' - Tables: theaters & screens
+create cluster cluster_screen_seats (screen_id number)
+size 512
+tablespace users
+storage (initial 10k next 10k);
 
-CREATE CLUSTER cluster_theater_screens (theater_id NUMBER)
-SIZE 512
-TABLESPACE users
-STORAGE (INITIAL 10K NEXT 10K);
+create index idx_cluster_screen_seats on cluster cluster_screen_seats;
 
-CREATE INDEX idx_cluster_theater_screens ON CLUSTER cluster_theater_screens;
+create table screens (
+    screen_id number primary key,
+    name varchar2(100),
+    location varchar2(150),
+    total_seats number not null
+) cluster cluster_screen_seats (screen_id);
 
-CREATE TABLE theaters (
-    theater_id NUMBER PRIMARY KEY,
-    name VARCHAR2(20),
-    location VARCHAR2(100),
-    total_seats NUMBER
-) CLUSTER cluster_theater_screens (theater_id);
+create table seats (
+    seat_id number primary key,
+    screen_id number references screens(screen_id),
+    seat_number varchar2(10),
+    seat_type varchar2(20)
+) cluster cluster_screen_seats (screen_id);
 
-CREATE TABLE screens (
-    screen_id NUMBER PRIMARY KEY,
-    theater_id NUMBER REFERENCES theaters(theater_id),
-    total_seats NUMBER NOT NULL
-) CLUSTER cluster_theater_screens (theater_id);
+create cluster cluster_show_tickets (show_id number)
+size 512
+tablespace users
+storage (initial 10k next 10k);
 
--- 2️. 'cluster_theater_seats' - Tables: theaters & seats
+create index idx_cluster_show_tickets on cluster cluster_show_tickets;
 
-CREATE CLUSTER cluster_theater_seats (theater_id NUMBER)
-SIZE 512
-TABLESPACE users
-STORAGE (INITIAL 10K NEXT 10K);
+create table shows (
+    show_id number primary key,
+    movie_id number references movies(movie_id),
+    screen_id number references screens(screen_id),
+    show_time timestamp,
+    price number(8,2)
+) cluster cluster_show_tickets (show_id);
 
-CREATE INDEX idx_cluster_theater_seats ON CLUSTER cluster_theater_seats;
+create table tickets (
+    ticket_id number primary key,
+    customer_id number references customers(customer_id),
+    show_id number references shows(show_id),
+    seat_id number references seats(seat_id),
+    booking_time timestamp default systimestamp,
+    ticket_status varchar2(20) default 'booked'
+) cluster cluster_show_tickets (show_id);
 
-CREATE TABLE seats (
-    seat_id NUMBER PRIMARY KEY,
-    theater_id NUMBER REFERENCES theaters(theater_id),
-    seat_number VARCHAR2(10),
-    seat_type VARCHAR2(20)
-) CLUSTER cluster_theater_seats (theater_id);
+create cluster cluster_ticket_payments (ticket_id number)
+size 512
+tablespace users
+storage (initial 10k next 10k);
 
--- 3️. cluster_show_tickets - Tables: shows & tickets
+create index idx_cluster_ticket_payments on cluster cluster_ticket_payments;
 
-CREATE CLUSTER cluster_show_tickets (show_id NUMBER)
-SIZE 512
-TABLESPACE users
-STORAGE (INITIAL 10K NEXT 10K);
-
-CREATE INDEX idx_cluster_show_tickets ON CLUSTER cluster_show_tickets;
-
-CREATE TABLE shows (
-    show_id NUMBER PRIMARY KEY,
-    movie_id NUMBER REFERENCES movies(movie_id),
-    theater_id NUMBER REFERENCES theaters(theater_id),
-    show_time TIMESTAMP,
-    screen_no NUMBER,
-    price NUMBER(8,2)
-) CLUSTER cluster_show_tickets (show_id);
-
-CREATE TABLE tickets (
-    ticket_id NUMBER PRIMARY KEY,
-    customer_id NUMBER REFERENCES customers(customer_id),
-    show_id NUMBER REFERENCES shows(show_id),
-    seat_id NUMBER REFERENCES seats(seat_id),
-    booking_time TIMESTAMP DEFAULT SYSTIMESTAMP,
-    ticket_status VARCHAR2(20) DEFAULT 'BOOKED'
-) CLUSTER cluster_show_tickets (show_id);
-
--- 4️. cluster_ticket_payments - Tables: tickets & payments
-
-CREATE CLUSTER cluster_ticket_payments (ticket_id NUMBER)
-SIZE 512
-TABLESPACE users
-STORAGE (INITIAL 10K NEXT 10K);
-
-CREATE INDEX idx_cluster_ticket_payments ON CLUSTER cluster_ticket_payments;
-
-CREATE TABLE payments (
-    payment_id NUMBER PRIMARY KEY,
-    ticket_id NUMBER REFERENCES tickets(ticket_id),
-    amount NUMBER(8,2),
-    payment_date DATE DEFAULT SYSDATE,
-    payment_mode VARCHAR2(30)
-) CLUSTER cluster_ticket_payments (ticket_id);
+create table payments (
+    payment_id number primary key,
+    ticket_id number references tickets(ticket_id),
+    amount number(8,2),
+    payment_date date default sysdate,
+    payment_mode varchar2(30)
+) cluster cluster_ticket_payments (ticket_id);
