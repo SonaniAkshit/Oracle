@@ -143,6 +143,27 @@ begin
 end;
 /
 
+create or replace trigger trg_show_gap
+before insert or update on shows
+for each row
+declare
+    v_count number;
+begin
+    -- check for overlapping shows in the same screen within 4 hours
+    select count(*)
+    into v_count
+    from shows
+    where screen_id = :new.screen_id
+      and trunc(show_time) = trunc(:new.show_time) -- same date
+      and abs(extract(hour from (show_time - :new.show_time)) * 60 +
+              extract(minute from (show_time - :new.show_time))) < 240; -- less than 240 mins (4 hours)
+
+    if v_count > 0 then
+        raise_application_error(-20010,
+            'show already running! add new show at least 4 hours apart.');
+    end if;
+end;
+/
 
 -- 4.TICKETS
 -- more tickets booked than seats available
@@ -242,6 +263,17 @@ begin
 end;
 /
 
+create or replace trigger trg_cancel_check
+before update on tickets
+for each row
+begin
+    if :new.ticket_status = 'CANCELLED' and :old.ticket_status != 'BOOKED' then
+        raise_application_error(-20022, 'Cancel not allowed. Ticket is not in BOOKED state.');
+    end if;
+end;
+/
+
+
 -- 5.SEAT
 create or replace trigger trg_seat_invalid_fk
 before insert or update on seats
@@ -292,5 +324,25 @@ begin
     if v_count = 0 then
         raise_application_error(-20017, 'Invalid ticket_id: ticket does not exist');
     end if;
+end;
+/
+
+create or replace trigger trg_payment_check
+before insert or update on payments
+for each row
+declare
+    v_status tickets.ticket_status%type;
+begin
+    select ticket_status
+    into v_status
+    from tickets
+    where ticket_id = :new.ticket_id;
+
+    if v_status != 'BOOKED' then
+        raise_application_error(-20020, 'Payment not allowed. Ticket is not booked.');
+    end if;
+exception
+    when no_data_found then
+        raise_application_error(-20021, 'Payment not allowed. Ticket does not exist.');
 end;
 /

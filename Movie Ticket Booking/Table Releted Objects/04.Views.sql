@@ -19,7 +19,7 @@ join movies m on sh.movie_id = m.movie_id;
 
 create or replace view vw_screen_revenue as
 select s.screen_id,
-       s.screen_name,
+       s.name,
        theater_report_pkg.get_screen_revenue(s.screen_id) as total_revenue
 from screens s;
 
@@ -84,3 +84,30 @@ join shows sh on s.screen_id = sh.screen_id
 where sh.show_time > systimestamp
 order by s.name, sh.show_time;
 
+-- upcoming movies 
+create or replace view upcoming_movies_v as
+select movie_id, title, release_date
+from movies
+where release_date > sysdate;
+
+-- show bookings
+
+create or replace view customer_bookings_v as
+select
+    c.customer_id,
+    c.name as customer_name,
+    m.title as movie_title,
+    s.show_time,
+    scr.name as screen_name,
+    st.seat_number,
+    t.ticket_status,
+    t.booking_time,
+    p.amount as payment_amount,
+    p.payment_date
+from customers c
+join tickets t on c.customer_id = t.customer_id
+join shows s on t.show_id = s.show_id
+join movies m on s.movie_id = m.movie_id
+join screens scr on s.screen_id = scr.screen_id
+join seats st on t.seat_id = st.seat_id
+left join payments p on t.ticket_id = p.ticket_id;

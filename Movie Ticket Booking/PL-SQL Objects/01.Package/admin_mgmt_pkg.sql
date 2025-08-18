@@ -93,7 +93,7 @@ commit;
 -- exec admin_mgmt_pkg.add_movie('&title', &duration, '&release_date');
 -- exec admin_mgmt_pkg.add_screen('&name', '&location', &total_seats);
 -- exec admin_mgmt_pkg.add_seat(&screen_id, '&seat_number');
--- exec admin_mgmt_pkg.add_show(&movie_id, &screen_id, timestamp'&show_time', &price);
+-- exec admin_mgmt_pkg.add_show(&movie_id, &screen_id,'&show_time', &price);
 
 -- -- demo_records
 -- -- Add movie
@@ -107,3 +107,12 @@ commit;
 
 -- -- Add show
 -- exec admin_mgmt_pkg.add_show(1, 1, timestamp'2025-08-20 19:00:00', 250);
+
+
+--Date Formate
+
+-- ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'DD-MON-YYYY HH24:MI:SS';
+
+--ALTER SESSION SET NLS_DATE_FORMAT = 'DD-MON-YYYY HH24:MI:SS';
+
+-- SELECT * FROM NLS_SESSION_PARAMETERS WHERE PARAMETER LIKE 'NLS_%FORMAT';
