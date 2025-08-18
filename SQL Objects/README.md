@@ -202,3 +202,63 @@
    * `SET FEEDBACK`, `SET SERVEROUTPUT ON`
 
 ---
+
+Check your **default tablespace**, **temporary tablespace**, and their sizes using Oracle system views (`user_users`, `dba_tablespaces`, `dba_data_files`, `dba_temp_files`).
+
+Here’s how 👇
+
+---
+
+### 🔹 1. Show your schema’s **default tablespace** and **temporary tablespace**
+
+```sql
+select username,
+       default_tablespace,
+       temporary_tablespace
+from user_users;
+```
+
+👉 This will show for **your current schema**.
+(If you are `MCA41`, it will show for user `MCA41`).
+
+---
+
+### 🔹 2. Show **tablespaces with size (datafiles)**
+
+```sql
+select tablespace_name,
+       round(sum(bytes) / 1024 / 1024, 2) as size_mb
+from dba_data_files
+group by tablespace_name;
+```
+
+---
+
+### 🔹 3. Show **temporary tablespace size**
+
+```sql
+select tablespace_name,
+       round(sum(bytes) / 1024 / 1024, 2) as size_mb
+from dba_temp_files
+group by tablespace_name;
+```
+
+---
+
+### 🔹 4. If you don’t have DBA access
+
+You can use `user_tablespaces` instead of `dba_*` views:
+
+```sql
+select tablespace_name
+from user_tablespaces;
+```
+
+---
+
+⚠️ Note:
+
+* If you are on a **college lab server**, you might not have `DBA` access.
+* In that case, ask your DBA/teacher to grant you access or check using `user_users`.
+
+---

@@ -16,19 +16,45 @@ storage (
 );
 
 --- 2. movies
+-- create table movies (
+--     movie_id     number primary key,
+--     title        varchar2(150),
+--     duration     number,
+--     release_date date
+-- )
+-- tablespace users
+-- storage (
+--     initial 10k
+--     next 20k
+--     minextents 1
+--     maxextents 2
+-- );
+
 create table movies (
     movie_id     number primary key,
     title        varchar2(150),
     duration     number,
     release_date date
 )
-tablespace users
-storage (
-    initial 10k
-    next 20k
-    minextents 1
-    maxextents 2
+partition by range (release_date) (
+    partition old_movies values less than (date '2020-01-01')
+        tablespace users1
+        storage (
+            initial 10k
+            next 20k
+            minextents 1
+            maxextents 5
+        ),
+    partition new_movies values less than (maxvalue)
+        tablespace users
+        storage (
+            initial 10k
+            next 20k
+            minextents 1
+            maxextents 5
+        )
 );
+
 
 --- 3. screens
 create table screens (
