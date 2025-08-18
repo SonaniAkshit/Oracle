@@ -1,6 +1,6 @@
--- PACKAGE SPECIFICATION
-create or replace package moviebooking_pkg as
-    -- Procedure declarations
+-- CREATE ADMIN MANAGEMENT PACKAGE
+create or replace package admin_mgmt_pkg as
+    -- Procedure declarations for admin operations
     procedure add_movie(
         p_title        in varchar2,
         p_duration     in number,
@@ -24,11 +24,12 @@ create or replace package moviebooking_pkg as
         p_show_time in timestamp,
         p_price     in number
     );
-end moviebooking_pkg;
+end admin_mgmt_pkg;
 /
-
+ 
 -- PACKAGE BODY
-create or replace package body moviebooking_pkg as
+create or replace package body admin_mgmt_pkg as
+    
     -- add new movie
     procedure add_movie(
         p_title        in varchar2,
@@ -80,20 +81,29 @@ create or replace package body moviebooking_pkg as
 
         dbms_output.put_line('Show scheduled successfully.');
     end add_show;
-end moviebooking_pkg;
-/
 
+end admin_mgmt_pkg;
+/
+ 
 commit;
+
 
 -- usage:
 -- -- movie/screen/seat/show management
--- exec moviebooking_pkg.add_movie('&title', &duration, '&release_date');
--- exec moviebooking_pkg.add_screen('&name', '&location', &total_seats);
--- exec moviebooking_pkg.add_seat(&screen_id, '&seat_number');
--- exec moviebooking_pkg.add_show(&movie_id, &screen_id, timestamp'&show_time', &price);
+-- exec admin_mgmt_pkg.add_movie('&title', &duration, '&release_date');
+-- exec admin_mgmt_pkg.add_screen('&name', '&location', &total_seats);
+-- exec admin_mgmt_pkg.add_seat(&screen_id, '&seat_number');
+-- exec admin_mgmt_pkg.add_show(&movie_id, &screen_id, timestamp'&show_time', &price);
 
--- demo_records
--- exec moviebooking_pkg.add_movie('Inception', 148, date'2010-07-16');
--- exec moviebooking_pkg.add_screen('Screen 1', 'PVR Ahmedabad', 200);
--- exec moviebooking_pkg.add_seat(1, 'A1');
--- exec moviebooking_pkg.add_show(1, 1, timestamp'2025-08-20 19:00:00', 250);
+-- -- demo_records
+-- -- Add movie
+-- exec admin_mgmt_pkg.add_movie('Inception', 148, date'2010-07-16');
+
+-- -- Add screen
+-- exec admin_mgmt_pkg.add_screen('Screen 1', 'PVR Ahmedabad', 200);
+
+-- -- Add seat
+-- exec admin_mgmt_pkg.add_seat(1, 'A1');
+
+-- -- Add show
+-- exec admin_mgmt_pkg.add_show(1, 1, timestamp'2025-08-20 19:00:00', 250);

@@ -96,6 +96,54 @@ begin
 end;
 /
 
+-- dublicate show time error
+create or replace trigger trg_duplicate_show
+before insert on shows
+for each row
+declare
+    v_count number;
+begin
+    select count(*)
+    into v_count
+    from shows
+    where movie_id  = :new.movie_id
+      and screen_id = :new.screen_id
+      and show_time = :new.show_time;
+
+    if v_count > 0 then
+        raise_application_error(-20011, 'this show already exists (same movie, screen, and time)');
+    end if;
+end;
+/
+
+-- id errors
+create or replace trigger trg_show_invalid_fk
+before insert or update on shows
+for each row
+declare
+    v_count number;
+begin
+    -- check movie_id exists
+    select count(*) into v_count
+    from movies
+    where movie_id = :new.movie_id;
+
+    if v_count = 0 then
+        raise_application_error(-20012, 'Invalid movie_id: movie does not exist');
+    end if;
+
+    -- check screen_id exists
+    select count(*) into v_count
+    from screens
+    where screen_id = :new.screen_id;
+
+    if v_count = 0 then
+        raise_application_error(-20013, 'Invalid screen_id: screen does not exist');
+    end if;
+end;
+/
+
+
 -- 4.TICKETS
 -- more tickets booked than seats available
 create or replace trigger trg_ticket_over_capacity
@@ -167,7 +215,51 @@ begin
 end;
 /
 
---5.PAYMENTS
+-- id error
+create or replace trigger trg_ticket_invalid_fk
+before insert or update on tickets
+for each row
+declare
+    v_count number;
+begin
+    -- check show_id exists
+    select count(*) into v_count
+    from shows
+    where show_id = :new.show_id;
+
+    if v_count = 0 then
+        raise_application_error(-20014, 'Invalid show_id: show does not exist');
+    end if;
+
+    -- check seat_id exists
+    select count(*) into v_count
+    from seats
+    where seat_id = :new.seat_id;
+
+    if v_count = 0 then
+        raise_application_error(-20015, 'Invalid seat_id: seat does not exist');
+    end if;
+end;
+/
+
+-- 5.SEAT
+create or replace trigger trg_seat_invalid_fk
+before insert or update on seats
+for each row
+declare
+    v_count number;
+begin
+    select count(*) into v_count
+    from screens
+    where screen_id = :new.screen_id;
+
+    if v_count = 0 then
+        raise_application_error(-20016, 'Invalid screen_id: screen does not exist');
+    end if;
+end;
+/
+
+--6.PAYMENTS
 -- payment amount mismatch
 create or replace trigger trg_payment_mismatch
 before insert on payments
@@ -183,6 +275,22 @@ begin
 
     if :new.amount <> v_price then
         raise_application_error(-20005, 'payment amount does not match ticket price');
+    end if;
+end;
+/
+
+create or replace trigger trg_payment_invalid_fk
+before insert or update on payments
+for each row
+declare
+    v_count number;
+begin
+    select count(*) into v_count
+    from tickets
+    where ticket_id = :new.ticket_id;
+
+    if v_count = 0 then
+        raise_application_error(-20017, 'Invalid ticket_id: ticket does not exist');
     end if;
 end;
 /

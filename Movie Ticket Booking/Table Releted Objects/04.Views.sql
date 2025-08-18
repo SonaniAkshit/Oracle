@@ -1,78 +1,86 @@
--- 1. v_upcoming_shows – Upcoming Show Listings
-create or replace view v_upcoming_shows as
-select s.show_id,
-       m.title as movie_title,
-       sc.name  as screen_name,
-       sc.location,
-       s.show_time,
-       s.price
-from shows s
-join movies m on s.movie_id = m.movie_id
-join screens sc on s.screen_id = sc.screen_id
-where s.show_time > systimestamp;
-
--- 2. v_available_seats – Available Seats for Each Show
-create or replace view v_available_seats as
-select sh.show_id,
-       sc.name as screen_name,
-       s.seat_number
-from shows sh
-join screens sc on sh.screen_id = sc.screen_id
-join seats s on s.screen_id = sc.screen_id
-left join tickets tk on tk.show_id = sh.show_id 
-                     and tk.seat_id = s.seat_id 
-                     and tk.ticket_status = 'BOOKED'
-where tk.ticket_id is null;
-
--- 3. v_customer_bookings – Customer Booking History
-create or replace view v_customer_bookings as
-select c.customer_id,
-       c.name as customer_name,
-       m.title as movie_title,
-       sc.name as screen_name,
-       s.seat_number,
-       sh.show_time,
-       tk.ticket_status
-from customers c
-join tickets tk on c.customer_id = tk.customer_id
-join shows sh on tk.show_id = sh.show_id
-join movies m on sh.movie_id = m.movie_id
-join screens sc on sh.screen_id = sc.screen_id
-join seats s on tk.seat_id = s.seat_id;
-
--- 4. v_ticket_payments – Ticket with Payment Details
-create or replace view v_ticket_payments as
-select tk.ticket_id,
-       c.name as customer_name,
-       m.title as movie_title,
-       sc.name as screen_name,
-       sh.show_time,
-       p.amount,
-       p.payment_date
-from tickets tk
-join customers c on tk.customer_id = c.customer_id
-join shows sh on tk.show_id = sh.show_id
-join movies m on sh.movie_id = m.movie_id
-join screens sc on sh.screen_id = sc.screen_id
-join payments p on tk.ticket_id = p.ticket_id;
-
--- 5. v_sales_report – Daily Sales Summary
-create or replace view v_sales_report as
-select trunc(p.payment_date) as sale_date,
-       count(p.payment_id) as total_tickets,
-       sum(p.amount) as total_revenue
-from payments p
-group by trunc(p.payment_date)
-order by sale_date desc;
-
--- 6. v_movie_performance – How Movies Are Performing
-create or replace view v_movie_performance as
+-- 1. Movie Revenue View
+create or replace view vw_movie_revenue as
 select m.movie_id,
        m.title,
-       count(tk.ticket_id) as tickets_sold,
-       sum(p.amount) as total_revenue
+       theater_report_pkg.get_movie_revenue(m.movie_id) as total_revenue
+from movies m;
+
+-- 2. Show Performance View
+create or replace view vw_show_performance as
+select sh.show_id,
+       m.title as movie_title,
+       sh.show_time,
+       theater_report_pkg.get_show_tickets(sh.show_id) as tickets_sold,
+       theater_report_pkg.get_show_revenue(sh.show_id) as revenue
+from shows sh
+join movies m on sh.movie_id = m.movie_id;
+
+-- 3. Screen Revenue View
+
+create or replace view vw_screen_revenue as
+select s.screen_id,
+       s.screen_name,
+       theater_report_pkg.get_screen_revenue(s.screen_id) as total_revenue
+from screens s;
+
+-- 4. Theater Revenue View (Overall)
+
+create or replace view vw_theater_revenue as
+select theater_report_pkg.get_theater_revenue() as total_revenue
+from dual;
+
+-- 5. Top Movies by Revenue
+
+create or replace view vw_top_movies as
+select m.movie_id,
+       m.title,
+       theater_report_pkg.get_movie_revenue(m.movie_id) as revenue
 from movies m
-join shows sh on m.movie_id = sh.movie_id
-join tickets tk on sh.show_id = tk.show_id
-join payments p on tk.ticket_id = p.ticket_id
+order by revenue desc;
+
+
+
+-- Customer-Facing Views
+
+-- 1. Upcoming Shows with Availability
+
+create or replace view vw_upcoming_shows as
+select sh.show_id,
+       m.title as movie_title,
+       sh.show_time,
+       s.name as screen_name,
+       customer_view_pkg.get_total_seats(sh.show_id) as total_seats,
+       customer_view_pkg.get_booked_seats(sh.show_id) as booked_seats,
+       customer_view_pkg.get_available_seats(sh.show_id) as available_seats,
+       sh.price as ticket_price
+from shows sh
+join movies m on sh.movie_id = m.movie_id
+join screens s on sh.screen_id = s.screen_id
+where sh.show_time > systimestamp
+order by sh.show_time;
+
+-- 2. Movie-Wise Show Summary
+
+create or replace view vw_movie_show_summary as
+select m.movie_id,
+       m.title,
+       count(sh.show_id) as total_shows,
+       sum(customer_view_pkg.get_available_seats(sh.show_id)) as total_available_seats
+from movies m
+left join shows sh on m.movie_id = sh.movie_id
+where sh.show_time > systimestamp
 group by m.movie_id, m.title;
+
+-- 3. Screen-Wise Availability
+
+create or replace view vw_screen_availability as
+select s.screen_id,
+       s.name as screen_name,
+       sh.show_id,
+       sh.show_time,
+       customer_view_pkg.get_available_seats(sh.show_id) as available_seats
+from screens s
+join shows sh on s.screen_id = sh.screen_id
+where sh.show_time > systimestamp
+order by s.name, sh.show_time;
+
