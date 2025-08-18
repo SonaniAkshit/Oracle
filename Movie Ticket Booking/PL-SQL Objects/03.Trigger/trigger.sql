@@ -1,5 +1,4 @@
--- Show scheduled before movie release
-
+-- show scheduled before movie release
 create or replace trigger trg_show_before_release
 before insert or update on shows
 for each row
@@ -12,14 +11,12 @@ begin
     where movie_id = :new.movie_id;
 
     if :new.show_time < v_release_date then
-        dbms_output.put_line('show time is before the movie release date.');
+        raise_application_error(-20001, 'show time is before the movie release date');
     end if;
 end;
 /
 
-
--- More tickets booked than seats available
-
+-- more tickets booked than seats available
 create or replace trigger trg_ticket_over_capacity
 after insert on tickets
 for each row
@@ -40,13 +37,12 @@ begin
       and ticket_status = 'BOOKED';
 
     if v_booked_seats > v_total_seats then
-        dbms_output.put_line('more tickets booked than seats in this screen.');
+        raise_application_error(-20002, 'more tickets booked than seats available');
     end if;
 end;
 /
 
--- Seat double booking
-
+-- seat double booking
 create or replace trigger trg_seat_double_booking
 after insert on tickets
 for each row
@@ -61,13 +57,12 @@ begin
       and ticket_status = 'BOOKED';
 
     if v_count > 1 then
-        dbms_output.put_line('this seat is already booked for the show.');
+        raise_application_error(-20003, 'this seat is already booked for the show');
     end if;
 end;
 /
 
--- Seat not belonging to the show’s screen
-
+-- seat not belonging to the show’s screen
 create or replace trigger trg_seat_wrong_screen
 after insert on tickets
 for each row
@@ -86,14 +81,12 @@ begin
     where seat_id = :new.seat_id;
 
     if v_show_screen_id <> v_seat_screen_id then
-        dbms_output.put_line('this seat is not in the same screen of the show.');
+        raise_application_error(-20004, 'this seat is not in the same screen as the show');
     end if;
 end;
 /
 
-
--- Payment amount mismatch
-
+-- payment amount mismatch
 create or replace trigger trg_payment_mismatch
 after insert on payments
 for each row
@@ -107,21 +100,87 @@ begin
     where t.ticket_id = :new.ticket_id;
 
     if :new.amount <> v_price then
-        dbms_output.put_line('payment amount not matching with ticket price.');
+        raise_application_error(-20005, 'payment amount does not match ticket price');
     end if;
 end;
 /
 
--- Unrealistic movie duration
-
+-- unrealistic movie duration
 create or replace trigger trg_movie_invalid_duration
-after insert or update on movies
+before insert or update on movies
 for each row
 begin
     if :new.duration <= 0 then
-        dbms_output.put_line('movie duration should be more than zero.');
+        raise_application_error(-20006, 'movie duration should be more than zero');
     elsif :new.duration > 400 then
-        dbms_output.put_line('movie duration is too long, please check again.');
+        raise_application_error(-20007, 'movie duration is too long, please check again');
+    end if;
+end;
+/
+
+-- duplicate movie insert
+create or replace trigger trg_duplicate_movie_date
+before insert on movies
+for each row
+declare
+    v_count number;
+begin
+    select count(*)
+    into v_count
+    from movies
+    where title = :new.title
+      and release_date = :new.release_date;
+
+    if v_count > 0 then
+        raise_application_error(-20008, 'this movie is already released on the same date');
+    end if;
+end;
+/
+
+-- seat over capacity
+create or replace trigger trg_seat_over_capacity
+before insert on seats
+for each row
+declare
+    v_total_seats number;
+    v_existing_seats number;
+begin
+    -- get total seats allowed for the screen
+    select total_seats
+    into v_total_seats
+    from screens
+    where screen_id = :new.screen_id;
+
+    -- count how many seats already exist in this screen
+    select count(*)
+    into v_existing_seats
+    from seats
+    where screen_id = :new.screen_id;
+
+    -- if adding one more exceeds the limit, block insert
+    if v_existing_seats + 1 > v_total_seats then
+        raise_application_error(-20009, 'cannot add more seats: screen capacity exceeded');
+    end if;
+end;
+/
+
+--duplicate seat
+
+create or replace trigger trg_duplicate_seat
+before insert or update on seats
+for each row
+declare
+    v_count number;
+begin
+    select count(*)
+    into v_count
+    from seats
+    where screen_id = :new.screen_id
+      and seat_number = :new.seat_number
+      and seat_id <> nvl(:new.seat_id, -1); -- ignore self in case of update
+
+    if v_count > 0 then
+        raise_application_error(-20010, 'seat number already exists in this screen');
     end if;
 end;
 /

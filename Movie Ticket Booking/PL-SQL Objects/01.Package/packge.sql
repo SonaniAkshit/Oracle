@@ -87,7 +87,7 @@ commit;
 
 -- usage:
 -- -- movie/screen/seat/show management
--- exec moviebooking_pkg.add_movie('&title', &duration, date'&release_date');
+-- exec moviebooking_pkg.add_movie('&title', &duration, '&release_date');
 -- exec moviebooking_pkg.add_screen('&name', '&location', &total_seats);
 -- exec moviebooking_pkg.add_seat(&screen_id, '&seat_number');
 -- exec moviebooking_pkg.add_show(&movie_id, &screen_id, timestamp'&show_time', &price);
