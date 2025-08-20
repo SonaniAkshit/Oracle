@@ -90,6 +90,7 @@ create or replace package body booking_pkg as
 end booking_pkg;
 /
 
+commit;
 -- exec booking_pkg.book_ticket(&customer_id, &show_id, &seat_id);
 -- exec booking_pkg.make_payment(&ticket_id, &amount);
 -- exec booking_pkg.cancel_ticket(&ticket_id);

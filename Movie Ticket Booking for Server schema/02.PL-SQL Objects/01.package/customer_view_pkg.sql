@@ -49,3 +49,5 @@ create or replace package body customer_view_pkg as
 end customer_view_pkg;
 /
 
+
+commit;
