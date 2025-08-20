@@ -114,6 +114,8 @@ end booking_pkg;
 /
 
 commit;
+
+-- exec booking_pkg.register_customer(&name, &email, &password, &phone);
 -- exec booking_pkg.book_ticket(&customer_id, &show_id, &seat_id);
 -- exec booking_pkg.make_payment(&ticket_id, &amount);
 -- exec booking_pkg.cancel_ticket(&ticket_id);
