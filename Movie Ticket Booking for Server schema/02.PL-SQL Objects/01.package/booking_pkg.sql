@@ -1,4 +1,13 @@
 create or replace package booking_pkg as
+
+    -- register customer
+    procedure register_customer(
+        p_name      in varchar2,
+        p_email     in varchar2,
+        p_password  in varchar2,
+        p_phone     in varchar2
+    );
+
     -- book ticket
     procedure book_ticket(
         p_customer_id in number,
@@ -20,6 +29,20 @@ end booking_pkg;
 /
 
 create or replace package body booking_pkg as
+
+    -- register customer
+    procedure register_customer(
+        p_name      in varchar2,
+        p_email     in varchar2,
+        p_password  in varchar2,
+        p_phone     in varchar2
+    ) is
+    begin
+        insert into customers (customer_id, name, email, password, phone, registered_on)
+        values (seq_customers.nextval, p_name, p_email, p_password, p_phone, sysdate);
+
+        dbms_output.put_line('customer ' || p_name || ' registered successfully.');
+    end register_customer;
 
     -- book ticket
     procedure book_ticket(
