@@ -67,7 +67,7 @@ create or replace package body booking_pkg as
         insert into tickets (ticket_id, customer_id, show_id, seat_id, booking_time, ticket_status)
         values (seq_tickets.nextval, p_customer_id, p_show_id, p_seat_id, systimestamp, 'BOOKED');
 
-        dbms_output.put_line('ticket booked successfully.');
+        dbms_output.put_line('make payment and confirm booking for ticket ' || seq_tickets.currval);
     end book_ticket;
 
 
@@ -115,7 +115,7 @@ end booking_pkg;
 
 commit;
 
--- exec booking_pkg.register_customer(&name, &email, &password, &phone);
+-- exec booking_pkg.register_customer('&name', '&email', '&password', &phone);
 -- exec booking_pkg.book_ticket(&customer_id, &show_id, &seat_id);
 -- exec booking_pkg.make_payment(&ticket_id, &amount);
 -- exec booking_pkg.cancel_ticket(&ticket_id);
