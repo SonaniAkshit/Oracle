@@ -7,10 +7,10 @@ Each folder has its own documentation and scripts.
 
 | Folder | Description |
 |--------|-------------|
-| [Oracle User Setup](./UserSetup) | Scripts and instructions to manage Oracle user roles, privileges, and schema configurations. |
-| [SQL Objects Definitions](./SQLObjects) | SQL definitions for tables, views, indexes, triggers, and other database objects. |
-| [Movie Ticket Booking System](./MovieTicketBooking) | Implements a movie ticket booking system including SQL schema and business logic. |
-| [db-schema-export-import-guide](./db-schema-export-import-guide) | Demonstrates exporting a full schema and importing it into the SCOTT schema, with parameter explanations and external data loading methods. |
+| [Oracle User Setup](./Oracle%20User%20Setup) | Scripts and instructions to manage Oracle user roles, privileges, and schema configurations. |
+| [SQL Objects Definitions](./SQL%20Objects) | SQL definitions for tables, views, indexes, triggers, and other database objects. |
+| [Movie Ticket Booking System](./Movie%20Ticket%20Booking%20for%20Server%20schema) | Implements a movie ticket booking system including SQL schema and business logic. |
+| [db-schema-export-import](./db-schema-export-import) | Demonstrates exporting a full schema and importing it into the SCOTT schema, with parameter explanations and external data loading methods. |
 | [db-schema-migration-scott](./db-schema-migration-scott) | Export a schema without procedures, import it into SCOTT schema, and load external data from a sequential file into SCOTT. |
 | [db-fragmentation-check](./db-fragmentation-check) | Provides queries to identify fragmentation at tablespace, row, and segment levels, with conclusions for analyzing results. |
 | [db-lock-monitor](./db-lock-monitor) | Query to detect locks in the database with formatted output showing session, object, and lock details. |
