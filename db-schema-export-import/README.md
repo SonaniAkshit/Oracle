@@ -11,11 +11,11 @@ This project demonstrates:
 4. Loading external data into the schema using three different methods.
 
 ## Sections
-1. **Export Schema**
+1. **Export**
    - Explanation of parameters used during the export process.
    - Example commands.
    
-2. **Import Schema**
+2. **Import**
    - Explanation of parameters used during the import process.
    - Example commands.
 
