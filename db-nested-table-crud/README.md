@@ -135,165 +135,231 @@ delete from student_results where student_id = 2;
 
 ### 7 CRUD with Stored Procedure
 
-Got it! Let’s rewrite **simple CRUD procedures** for your `student_results` table using the **nested table for subjects** and **VARRAY for marks.**
+**extend the `student_results` nested table** like the `book_authors` example and include **department and its course**, while keeping the **subjects and marks** structure.
 
 ---
 
-## 1. Insert Student Procedure
+## 1. Create Object Type for Department
 
 ```sql
-create or replace procedure insert_student_result(
-    p_student_id in number,
-    p_name       in varchar2,
-    p_sub1       in varchar2,
-    p_sub2       in varchar2,
-    p_sub3       in varchar2,
-    p_m1         in number,
-    p_m2         in number,
-    p_m3         in number
-) as
-    v_exists number;
-begin
-    select count(*) into v_exists
-    from student_results
-    where student_id = p_student_id;
-
-    if v_exists = 0 then
-        insert into student_results (student_id, name, subjects, marks)
-        values (p_student_id, p_name, subject_list(p_sub1, p_sub2, p_sub3), marks_list(p_m1, p_m2, p_m3));
-
-        dbms_output.put_line('New student inserted with id ' || p_student_id);
-    else
-        dbms_output.put_line('Student already exists with id ' || p_student_id);
-    end if;
-end;
+CREATE OR REPLACE TYPE dept_obj AS OBJECT (
+    dept_id     NUMBER,
+    dept_name   VARCHAR2(50),
+    course      VARCHAR2(50)
+);
 /
 ```
 
 ---
 
-## 2. Update Marks and Subjects Procedure
+## 2. Create Nested Table Type for Departments
 
 ```sql
-create or replace procedure update_student_result(
-    p_student_id in number,
-    p_sub1       in varchar2,
-    p_sub2       in varchar2,
-    p_sub3       in varchar2,
-    p_m1         in number,
-    p_m2         in number,
-    p_m3         in number
-) as
-    v_exists number;
-begin
-    select count(*) into v_exists
-    from student_results
-    where student_id = p_student_id;
-
-    if v_exists = 0 then
-        dbms_output.put_line('Student not found with id ' || p_student_id);
-    else
-        update student_results
-        set subjects = subject_list(p_sub1, p_sub2, p_sub3),
-            marks = marks_list(p_m1, p_m2, p_m3)
-        where student_id = p_student_id;
-
-        dbms_output.put_line('Subjects and marks updated for student_id ' || p_student_id);
-    end if;
-end;
+CREATE OR REPLACE TYPE dept_nested AS TABLE OF dept_obj;
 /
 ```
 
 ---
 
-## 3. Select Student Procedure
+## 3. Create Nested Table for Subjects (existing)
 
 ```sql
-create or replace procedure select_student_result(
-    p_name in varchar2
-) as
+CREATE OR REPLACE TYPE subject_list AS TABLE OF VARCHAR2(30);
+/ 
+
+CREATE OR REPLACE TYPE marks_list AS VARRAY(5) OF NUMBER(3);
+/ 
+```
+
+---
+
+## 4. Create `student_results` Table with Nested Columns
+
+```sql
+CREATE TABLE student_results (
+    student_id NUMBER PRIMARY KEY,
+    name       VARCHAR2(50),
+    department dept_nested,
+    subjects   subject_list,
+    marks      marks_list
+) NESTED TABLE department STORE AS dept_storage
+  NESTED TABLE subjects STORE AS subjects_storage
+  TABLESPACE users
+  STORAGE (INITIAL 5K NEXT 10K);
+```
+
+* `department` → nested table of `dept_obj` (can store multiple departments/courses per student)
+* `subjects` → nested table
+* `marks` → VARRAY
+
+---
+
+## 5. Insert Student Procedure
+
+```sql
+CREATE OR REPLACE PROCEDURE insert_student_result(
+    p_student_id IN NUMBER,
+    p_name       IN VARCHAR2,
+    p_dept_id    IN NUMBER,
+    p_dept_name  IN VARCHAR2,
+    p_course     IN VARCHAR2,
+    p_sub1       IN VARCHAR2,
+    p_sub2       IN VARCHAR2,
+    p_sub3       IN VARCHAR2,
+    p_m1         IN NUMBER,
+    p_m2         IN NUMBER,
+    p_m3         IN NUMBER
+) AS
+    v_exists NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_exists
+    FROM student_results
+    WHERE student_id = p_student_id;
+
+    IF v_exists = 0 THEN
+        INSERT INTO student_results (student_id, name, department, subjects, marks)
+        VALUES (
+            p_student_id, 
+            p_name,
+            dept_nested(dept_obj(p_dept_id, p_dept_name, p_course)),
+            subject_list(p_sub1, p_sub2, p_sub3),
+            marks_list(p_m1, p_m2, p_m3)
+        );
+
+        DBMS_OUTPUT.PUT_LINE('New student inserted with id ' || p_student_id);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Student already exists with id ' || p_student_id);
+    END IF;
+END;
+/
+```
+
+---
+
+## 6. Update Student Procedure
+
+```sql
+CREATE OR REPLACE PROCEDURE update_student_result(
+    p_student_id IN NUMBER,
+    p_dept_id    IN NUMBER,
+    p_dept_name  IN VARCHAR2,
+    p_course     IN VARCHAR2,
+    p_sub1       IN VARCHAR2,
+    p_sub2       IN VARCHAR2,
+    p_sub3       IN VARCHAR2,
+    p_m1         IN NUMBER,
+    p_m2         IN NUMBER,
+    p_m3         IN NUMBER
+) AS
+    v_exists NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_exists
+    FROM student_results
+    WHERE student_id = p_student_id;
+
+    IF v_exists = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Student not found with id ' || p_student_id);
+    ELSE
+        UPDATE student_results
+        SET department = dept_nested(dept_obj(p_dept_id, p_dept_name, p_course)),
+            subjects   = subject_list(p_sub1, p_sub2, p_sub3),
+            marks      = marks_list(p_m1, p_m2, p_m3)
+        WHERE student_id = p_student_id;
+
+        DBMS_OUTPUT.PUT_LINE('Student updated for id ' || p_student_id);
+    END IF;
+END;
+/
+```
+
+---
+
+## 7. Select Student Procedure
+
+```sql
+CREATE OR REPLACE PROCEDURE select_student_result(
+    p_name IN VARCHAR2
+) AS
+    v_dept dept_nested;
     v_subjects subject_list;
-    v_marks    marks_list;
-begin
-    select subjects, marks into v_subjects, v_marks
-    from student_results
-    where name = p_name;
+    v_marks marks_list;
+BEGIN
+    SELECT department, subjects, marks
+    INTO v_dept, v_subjects, v_marks
+    FROM student_results
+    WHERE name = p_name;
 
-    dbms_output.put_line('Student: ' || p_name);
-    for i in 1 .. v_subjects.count loop
-        dbms_output.put_line('  Subject: ' || v_subjects(i) || ' - Mark: ' || v_marks(i));
-    end loop;
+    DBMS_OUTPUT.PUT_LINE('Student: ' || p_name);
+    
+    -- Departments
+    FOR i IN 1 .. v_dept.COUNT LOOP
+        DBMS_OUTPUT.PUT_LINE('  Dept: ' || v_dept(i).dept_name || ' - Course: ' || v_dept(i).course);
+    END LOOP;
 
-exception
-    when no_data_found then
-        dbms_output.put_line('Student not found with name ' || p_name);
-end;
+    -- Subjects and Marks
+    FOR i IN 1 .. v_subjects.COUNT LOOP
+        DBMS_OUTPUT.PUT_LINE('  Subject: ' || v_subjects(i) || ' - Mark: ' || v_marks(i));
+    END LOOP;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Student not found with name ' || p_name);
+END;
 /
 ```
 
 ---
 
-## 4. Delete Student Procedure
+## 8. Delete Student Procedure
 
 ```sql
-create or replace procedure delete_student_result(
-    p_name in varchar2
-) as
-begin
-    delete from student_results where name = p_name;
+CREATE OR REPLACE PROCEDURE delete_student_result(
+    p_name IN VARCHAR2
+) AS
+BEGIN
+    DELETE FROM student_results WHERE name = p_name;
 
-    if sql%rowcount > 0 then
-        dbms_output.put_line('Student ' || p_name || ' deleted.');
-    else
-        dbms_output.put_line('No student found with name ' || p_name);
-    end if;
-end;
+    IF SQL%ROWCOUNT > 0 THEN
+        DBMS_OUTPUT.PUT_LINE('Student ' || p_name || ' deleted.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('No student found with name ' || p_name);
+    END IF;
+END;
 /
 ```
 
 ---
 
-## 5. Example Execution
+## 9. Example Execution Using `&` Prompts
 
-***Method:1***
 ```sql
--- Insert a student
-exec insert_student_result(1, 'akshit', 'c', 'c++', 'python', 85, 90, 78);
-exec insert_student_result(2, 'sunny', 'c', 'c++', 'python', 80, 70, 75);
+-- Insert student (runtime input)
+exec insert_student_result(
+    &student_id, '&name', &dept_id, '&dept_name', '&course',
+    '&sub1', '&sub2', '&sub3', &m1, &m2, &m3
+);
 
 -- Update student
-exec update_student_result(1, 'C', 'C++', 'Python', 95, 85, 90);
+exec update_student_result(
+    &student_id, &dept_id, '&dept_name', '&course',
+    '&sub1', '&sub2', '&sub3', &m1, &m2, &m3
+);
 
--- Select student marks
-exec select_student_result('akshit');
-
--- Delete student
-exec delete_student_result('sunny');
-```
-
-***Method:2***
-```sql
--- 1. Insert Student (prompt for input)
-
-exec insert_student_result(&student_id,'&name','&sub1','&sub2','&sub3',&m1,&m2,&m3);
-
--- 2. Update Student
-exec update_student_result(&student_id,'&sub1','&sub2','&sub3',&m1,&m2,&m3);
-
--- 3. Select Student by Name
+-- Select student by name
 exec select_student_result('&name');
 
--- 4. Delete Student by Name
+-- Delete student by name
 exec delete_student_result('&name');
 ```
 
 ---
 
-✅ This setup provides:
+✅ **This version includes:**
 
-1. **Nested table** for subjects
-2. **VARRAY** for marks
-3. Simple **insert, update, select, delete** procedures
-4. Output using `dbms_output.put_line`
+1. Nested table for **departments + course**
+2. Nested table for **subjects**
+3. VARRAY for **marks**
+4. **Insert, Update, Select, Delete** procedures
+5. Runtime input using `&` substitution variables
 
 ---
