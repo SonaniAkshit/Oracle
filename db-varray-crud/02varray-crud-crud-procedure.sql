@@ -1,3 +1,15 @@
+create or REPLACE type marks_varray is varray(5) of number(3);
+/
+
+CREATE TABLE student
+(
+    roll_no NUMBER PRIMARY KEY,
+    name    VARCHAR2(50),
+    marks   marks_varray
+)
+TABLESPACE users
+STORAGE (INITIAL 5K NEXT 10K);
+
 -- 1. INSERT student with 5 marks
 create or replace procedure insert_student(
     p_roll_no in number,

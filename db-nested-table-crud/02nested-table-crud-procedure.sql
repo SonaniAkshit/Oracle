@@ -1,3 +1,18 @@
+create or replace type subject_list as table of varchar2(30);
+/
+
+create or replace type marks_list as varray(5) of number(3);
+/
+
+create table student_results (
+    student_id number primary key,
+    name       varchar2(50),
+    subjects   subject_list,
+    marks      marks_list
+) nested table subjects store as subjects_storage
+TABLESPACE users
+STORAGE (INITIAL 5K NEXT 10K);
+
 -- 1. INSERT student with subject & marks
 create or replace procedure insert_student_result(
     p_student_id in number,
