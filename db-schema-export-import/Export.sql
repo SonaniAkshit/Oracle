@@ -25,3 +25,15 @@ exp user01/user01@localhost:1521/xepdb1 \
     grants=y \
     triggers=y \
     constraints=y
+
+--  3.Table Level Export
+
+exp user01/user01@localhost:1521/xepdb1 \
+    file=user01_tables.dmp \
+    log=user01_tables_export.log \
+    tables=(EMP,DEPT) \
+    rows=y \
+    indexes=y \
+    grants=y \
+    triggers=y \
+    constraints=y
