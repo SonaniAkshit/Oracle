@@ -1,4 +1,4 @@
-# 🎬 Movie Ticket Booking for Server Schema
+# 🎬 Movie Ticket Booking
 
 This project provides a **complete Oracle database schema** and **PL/SQL business logic** for a **Movie Ticket Booking System**.
 It covers schema design, constraints, packages, triggers, and supporting objects to ensure data consistency and enforce business rules.
