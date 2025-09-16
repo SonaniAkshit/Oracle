@@ -9,16 +9,17 @@ Each folder is focused on a specific area with its own SQL/PLSQL scripts and doc
 
 | Folder | Description |
 |--------|-------------|
-| [Oracle User Setup](./Oracle%20User%20Setup) | Scripts to create users, manage roles, privileges, and schema configurations. |
-| [SQL Objects](./SQL%20Objects) | Definitions for tables, views, indexes, triggers, and other SQL objects. |
-| [Movie Ticket Booking for Server schema](./Movie%20Ticket%20Booking%20for%20Server%20schema) | Implements a sample movie ticket booking system schema with business logic. |
-| [db-schema-export-import](./db-schema-export-import) | Demonstrates exporting a schema and importing it into another schema with parameter explanations and external data loading. |
-| [db-schema-export-import-scott](./db-schema-export-import-scott) | Export a schema without procedures, import into SCOTT schema, and load external data from sequential files. |
-| [db-fragmentation-check](./db-fragmentation-check) | Queries to detect fragmentation at tablespace, row, and segment levels, with analysis. |
-| [db-lock-monitor](./db-lock-monitor) | SQL query to monitor and detect locks, showing sessions, objects, and lock details. |
-| [db-nested-table-crud](./db-nested-table-crud) | Scripts to create, insert, update, and query Oracle nested tables. |
-| [db-varray-crud](./db-varray-crud) | Demonstrates creating and manipulating VARRAY types in Oracle. |
-| [cloud-db-presentation](./cloud-db-presentation) | Slides and content about cloud databases (AWS, Google Cloud, Azure). |
+| [01Movie Ticket Booking](./01Movie%20Ticket%20Booking) | Schema and business logic for a sample movie ticket booking system. |
+| [02.1export-import](./02.1export-import) | Demonstrates schema export and import with parameter explanations. |
+| [02.2sql-loader](./02.2sql-loader) | SQL*Loader examples for loading external data (CSV, TXT, JSON, XML). |
+| [03fragmentation-check](./03fragmentation-check) | Queries to detect and analyze fragmentation at tablespace, row, and segment levels. |
+| [04lock-monitor](./04lock-monitor) | SQL scripts to monitor database locks with session and object details. |
+| [09varray-crud](./09varray-crud) | Demonstrates creation and CRUD operations on VARRAY types. |
+| [10nested-table-crud](./10nested-table-crud) | Scripts for creating, inserting, updating, and querying nested tables. |
+| [Oracle User Setup](./Oracle%20User%20Setup) | User creation, roles, and privilege management scripts. |
+| [SQL Objects](./SQL%20Objects) | Definitions for tables, views, indexes, triggers, and other objects. |
+| [cloud-db-presentation](./cloud-db-presentation) | Slides and notes about cloud databases (AWS, GCP, Azure). |
+| [schema-export-import-scott](./schema-export-import-scott) | Export schema without procedures, import into SCOTT schema, and load external data. |
 
 ---
 
