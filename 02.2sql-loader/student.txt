@@ -1,0 +1,10 @@
+1|Akshit|001|Computer Science|MCA
+2|Ravi|002|Computer Science|BCA
+3|Neha|003|Electronics|BTech
+4|Amit|004|Mechanical|BE
+5|Kiran|005|Civil|BE
+6|Divya|006|Information Tech|BSc
+7|Vikas|007|Mathematics|MSc
+8|Pooja|008|Physics|MSc
+9|Manish|009|Chemistry|MSc
+10|Reena|010|Biotechnology|BSc

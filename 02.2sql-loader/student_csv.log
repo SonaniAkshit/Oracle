@@ -1,0 +1,52 @@
+
+SQL*Loader: Release 21.0.0.0.0 - Production on Wed Sep 17 11:35:07 2025
+Version 21.3.0.0.0
+
+Copyright (c) 1982, 2021, Oracle and/or its affiliates.  All rights reserved.
+
+Control File:   student_csv.ctl
+Data File:      student.csv
+  Bad File:     student.bad
+  Discard File:  none specified
+ 
+ (Allow all discards)
+
+Number to load: ALL
+Number to skip: 0
+Errors allowed: 50
+Bind array:     250 rows, maximum of 1048576 bytes
+Continuation:    none specified
+Path used:      Conventional
+
+Table STUDENT_CSV, loaded from every logical record.
+Insert option in effect for this table: INSERT
+
+   Column Name                  Position   Len  Term Encl Datatype
+------------------------------ ---------- ----- ---- ---- ---------------------
+STUDENT_ID                          FIRST     *   ,  O(") CHARACTER            
+NAME                                 NEXT     *   ,  O(") CHARACTER            
+ENROLMENT_NO                         NEXT     *   ,  O(") CHARACTER            
+DEPARTMENT                           NEXT     *   ,  O(") CHARACTER            
+STREAM                               NEXT     *   ,  O(") CHARACTER            
+
+
+Table STUDENT_CSV:
+  8 Rows successfully loaded.
+  0 Rows not loaded due to data errors.
+  0 Rows not loaded because all WHEN clauses were failed.
+  0 Rows not loaded because all fields were null.
+
+
+Space allocated for bind array:                 322500 bytes(250 rows)
+Read   buffer bytes: 1048576
+
+Total logical records skipped:          0
+Total logical records read:             8
+Total logical records rejected:         0
+Total logical records discarded:        0
+
+Run began on Wed Sep 17 11:35:07 2025
+Run ended on Wed Sep 17 11:35:14 2025
+
+Elapsed time was:     00:00:07.05
+CPU time was:         00:00:00.25
