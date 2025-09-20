@@ -1,40 +1,38 @@
--- drop and recreate table
-drop table chain_demo purge;
-
-create table chain_demo (
-    id number,
-    big_col1 varchar2(4000),
-    big_col2 varchar2(4000)
+create table student_chain (
+    student_id number,
+    student_name varchar2(2000)
 )
 tablespace users
-storage (initial 10k next 20k pctincrease 0);
+storage(initial 10k next 20k);
 
--- insert rows larger than block
-insert into chain_demo values (1, rpad('x', 4000, 'x'), rpad('y', 4000, 'y'));
-insert into chain_demo values (2, rpad('a', 4000, 'a'), rpad('b', 4000, 'b'));
-commit;
-
--- analyze
-analyze table chain_demo compute statistics;
+-- analyze table
+analyze table student_chain compute statistics;
 
 select table_name, chain_cnt
 from user_tables
-where table_name = 'CHAIN_DEMO';
+where table_name = 'STUDENT_CHAIN';
 
--- solve chaining
-create table chain_demo2 (
-    id number,
-    big_col clob
-);
+insert into student_chain(student_id, student_name) values (1, 'Alice');
+insert into student_chain(student_id, student_name) values (2, 'Bob');
+insert into student_chain(student_id, student_name) values (3, 'Charlie');
+insert into student_chain(student_id, student_name) values (4, 'David');
+insert into student_chain(student_id, student_name) values (5, 'Emma');
+insert into student_chain(student_id, student_name) values (6, 'Frank');
+insert into student_chain(student_id, student_name) values (7, 'Grace');
+insert into student_chain(student_id, student_name) values (8, 'Hannah');
+insert into student_chain(student_id, student_name) values (9, 'Ian');
+insert into student_chain(student_id, student_name) values (10, 'Jack');
 
-insert into chain_demo2(id, big_col)
-select id, big_col1 || big_col2
-from chain_demo;
-commit;
+update student_chain
+        set student_name = rpad(student_name, 2000, 'X')
+        where student_id = 1;
 
--- re analyze
-analyze table chain_demo2 compute statistics;
+update student_chain
+        set student_name = rpad(student_name, 2000, 'X')
+        where student_id = 2;
 
-select table_name, chain_cnt
-from user_tables
-where table_name like 'CHAIN_DEMO%';
+update student_chain
+        set student_name = rpad(student_name, 2000, 'X')
+        where student_id = 3;
+
+alter table student_chain add (student_name_clob clob);

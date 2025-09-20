@@ -1,11 +1,11 @@
-LOAD DATA
-INFILE 'student.txt'
-INTO TABLE student_txt
-FIELDS TERMINATED BY '|' OPTIONALLY ENCLOSED BY '"'
+load data
+infile 'student.txt'
+into table student_txt
+fields terminated by '|' optionally enclosed by '"'
 (
- student_id     INTEGER EXTERNAL,
- name           CHAR,
- enrolment_no   CHAR,
- department     CHAR,
- stream         CHAR
+ student_id     integer external,
+ name           char,
+ enrolment_no   char,
+ department     char,
+ stream         char
 )
