@@ -1,4 +1,3 @@
--- check free space on tablespace level for SYSDBA
 -- dba_free_space
 select tablespace_name,
        sum(bytes)/1024/1024 as free_mb,

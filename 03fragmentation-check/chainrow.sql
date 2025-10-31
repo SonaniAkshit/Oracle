@@ -68,7 +68,7 @@ create table student_chain_new (
     student_id      number,
     student_name    varchar2(20),
     student_address clob
-)
+)    
 tablespace stud
 storage(initial 10k next 20k);
 
