@@ -1,9 +1,0 @@
-
-SQL*Loader: Release 21.0.0.0.0 - Production on Wed Sep 17 11:34:26 2025
-Version 21.3.0.0.0
-
-Copyright (c) 1982, 2021, Oracle and/or its affiliates.  All rights reserved.
-
-SQL*Loader-500: Unable to open file (student_csv.ctl)
-SQL*Loader-553: file not found
-SQL*Loader-509: System error: The system cannot find the file specified.
