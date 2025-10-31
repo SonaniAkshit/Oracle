@@ -1,330 +1,253 @@
-## **1. Fragmentation in Oracle Database**
+# Oracle Fragmentation Analysis — README
 
-**Definition:**
-Fragmentation happens when the physical storage of a table or index becomes inefficient, causing wasted space or poor performance. It usually appears after lots of **INSERT, UPDATE, and DELETE** operations.
+## Objective
 
-### **Types of Fragmentation**
-
-1. **Table Fragmentation**
-
-   * Caused when rows are inserted and deleted often.
-   * Empty space (holes) gets created inside blocks that are not reused efficiently.
-   * Leads to more blocks being read for the same data.
-
-2. **Index Fragmentation**
-
-   * Occurs when index entries are deleted or updated frequently.
-   * The index structure may have “dead” space, making lookups slower.
-
-3. **Tablespace Fragmentation**
-
-   * Free extents (chunks of space) are scattered all over the tablespace.
-   * New objects may not find a continuous extent, leading to performance issues.
+Write at least three queries to find fragmentation at different levels (tablespace, extents, and row chaining). Run them, interpret results, and derive conclusions. Also demonstrate row chaining and how to resolve it.
 
 ---
 
-### **How to Identify Fragmentation**
+## Quick summary of fragmentation types
 
-* **Table Fragmentation**
-
-  ```sql
-  SELECT table_name, blocks, empty_blocks, chain_cnt
-  FROM user_tables
-  WHERE table_name = 'STUDENT';
-  ```
-
-* **Index Fragmentation**
-
-  ```sql
-  ANALYZE INDEX idx_name VALIDATE STRUCTURE;
-  SELECT HEIGHT, DEL_LF_ROWS, LF_ROWS
-  FROM index_stats;
-  ```
+* **Table fragmentation** — wasted space inside blocks due to many deletes/updates. Causes extra block reads.
+* **Index fragmentation** — dead space inside index structures after deletes/updates. Slows index range scans.
+* **Tablespace fragmentation** — free extents scattered across the tablespace. Large contiguous allocations may fail or be slow.
 
 ---
 
-### **Fix Fragmentation**
+# 1 — Tablespace and extent level fragmentation (3 queries)
 
-* **Tables**
+> Use these as your first triage. If you do not have DBA rights use `USER_` views (examples below).
 
-  * `ALTER TABLE table_name MOVE;`  → moves the table to fresh blocks
-  * `ALTER TABLE table_name SHRINK SPACE;` (with ASSM tablespaces)
-  * Export/Import the table (for full cleanup)
-
-* **Indexes**
-
-  * `ALTER INDEX idx_name REBUILD;`
-  * `ALTER INDEX idx_name COALESCE;`
-
-* **Tablespace**
-
-  * Use locally managed tablespaces with automatic segment space management (ASSM) to reduce fragmentation.
-  * Resize or reorganize datafiles if needed.
-
----
-
-## **2. Row Chaining and Row Migration**
-
-These are often confused but are different:
-
-### **Row Chaining**
-
-* **What:** When a single row is too large to fit into one data block.
-* **Cause:** Wide tables with many columns or large datatypes (e.g., `LONG`, `CLOB`, `BLOB`).
-* **Effect:** Oracle splits the row across multiple blocks → extra I/O to fetch the row.
-
-### **Row Migration**
-
-* **What:** When a row initially fits in a block but grows too large after an update.
-* **Cause:** Update increases row size, and the block doesn’t have enough free space (PCTFREE too small).
-* **Effect:** Row is moved to another block, but the original block still holds a pointer → causes extra I/O.
-
----
-
-### **Detect Chained or Migrated Rows**
+### Query A — Free space summary by tablespace
 
 ```sql
-ANALYZE TABLE student COMPUTE STATISTICS;
-
-SELECT table_name, chain_cnt
-FROM user_tables
-WHERE table_name = 'STUDENT';
-
+-- Query A: free space and number of free extents per tablespace
+SELECT tablespace_name,
+       SUM(bytes)/1024/1024 AS free_mb,
+       COUNT(*)           AS free_extents
+FROM   dba_free_space
+GROUP  BY tablespace_name
+ORDER  BY tablespace_name;
 ```
 
----
+**What it shows**
 
-### **Fixing Row Chaining/Migration**
-
-* **For Row Chaining**
-
-  * Normalize table design (split very wide tables).
-  * Avoid very large datatypes in frequently accessed tables.
-
-* **For Row Migration**
-
-  * Rebuild the table: `ALTER TABLE student MOVE;`
-  * Adjust **PCTFREE** so updates have room to expand rows.
-  * Use `SHRINK SPACE` to reclaim space.
+* Total free MB per tablespace and how fragmented free space is (many small extents = fragmentation).
+  **If you lack privileges**
+* Replace `dba_free_space` with `user_free_space` or ask DBA to run it.
 
 ---
 
-## **3. Best Practices to Avoid Fragmentation & Chaining**
-
-* Use **locally managed tablespaces** with **ASSM**.
-* Set **PCTFREE** properly (higher if rows update often).
-* Regularly monitor `DBA_TABLES.CHAIN_CNT`.
-* Rebuild heavily fragmented indexes.
-* For large objects, use **securefile LOBs** or keep them in separate tablespaces.
-
----
-
-👉 In short:
-
-* **Fragmentation** = wasted space due to deletes/inserts.
-* **Row Chaining** = row too big for one block.
-* **Row Migration** = row moved because of update, original block keeps a pointer.
-
----
-
-**step-by-step lab** with SQL that you can run in Oracle.
-We’ll build one demo table `FRAGDEMO` and show both **fragmentation** and **chained rows**.
-
----
-
-# **Part 1: Fragmentation Demo**
-
-### 1. Create Table
+### Query B — Largest free extent per tablespace
 
 ```sql
-DROP TABLE fragdemo PURGE;
+-- Query B: largest continuous free extent available
+SELECT tablespace_name,
+       MAX(bytes)/1024/1024 AS largest_free_extent_mb
+FROM   dba_free_space
+GROUP  BY tablespace_name;
+```
 
-CREATE TABLE fragdemo (
-    id NUMBER,
-    name VARCHAR2(100)
+**What it shows**
+
+* If `largest_free_extent_mb` is small relative to needed allocation, large object creation or extent allocation may fail or fragment further.
+
+---
+
+### Query C — Allocated vs Free extents (combined)
+
+```sql
+-- Query C: combined report of allocated and free extents (alloc vs free)
+SELECT tablespace_name,
+       num_extents,
+       total_mb,
+       smallest_extent_mb,
+       largest_extent_mb,
+       type
+FROM (
+    SELECT tablespace_name,
+           COUNT(*)                 AS num_extents,
+           SUM(bytes)/1024/1024     AS total_mb,
+           MIN(bytes)/1024/1024     AS smallest_extent_mb,
+           MAX(bytes)/1024/1024     AS largest_extent_mb,
+           'ALLOCATED'              AS type
+    FROM   dba_extents
+    GROUP  BY tablespace_name
+    UNION ALL
+    SELECT tablespace_name,
+           COUNT(*)                 AS num_extents,
+           SUM(bytes)/1024/1024     AS total_mb,
+           MIN(bytes)/1024/1024     AS smallest_extent_mb,
+           MAX(bytes)/1024/1024     AS largest_extent_mb,
+           'FREE'                   AS type
+    FROM   dba_free_space
+    GROUP  BY tablespace_name
 )
-TABLESPACE users
-STORAGE (INITIAL 10K NEXT 20K PCTINCREASE 0);
+ORDER BY tablespace_name, type;
 ```
+
+**What it shows**
+
+* Side-by-side view of allocated extents and free extents, including smallest and largest extents. Helps you see distribution imbalance.
 
 ---
 
-### 2. Create Fragmentation Scenario
+### How to run these queries
 
-* Insert rows, then delete many of them to create “holes” inside blocks.
+1. Connect with a user that can read dictionary views:
 
-```sql
-BEGIN
-  FOR i IN 1..1000 LOOP
-    INSERT INTO fragdemo VALUES (i, RPAD('A',100,'A'));
-  END LOOP;
-  COMMIT;
-END;
-/
+   ```bash
+   sqlplus username/YourPassword@//localhost:1521/XEPDB1
+   ```
 
--- Delete every alternate row
-DELETE FROM fragdemo WHERE MOD(id,2)=0;
-COMMIT;
-```
-#### How to check what happened (useful queries)
-```sql
--- total rows
-SELECT COUNT(*) FROM fragdemo;
+   or run as a DBA with `CONNECT sys / AS SYSDBA`.
+2. Paste the query block exactly into SQL*Plus or save into a `.sql` file and run `@file.sql` or copy past code.
+3. If you get `ORA-00942` then switch to `user_` views:
 
--- verify deleted evens are gone
-SELECT COUNT(*) FROM fragdemo WHERE MOD(id,2) = 0;
-
--- basic table stats
-ANALYZE TABLE fragdemo COMPUTE STATISTICS;
-SELECT table_name, blocks, empty_blocks, chain_cnt
-FROM user_tables
-WHERE table_name = 'FRAGDEMO';
-
--- segment info
-SELECT segment_name, bytes/1024/1024 AS mb_allocated, blocks
-FROM user_segments
-WHERE segment_name = 'FRAGDEMO';
-
-```
-
-Now blocks have free space inside, but not efficiently reusable → **fragmentation**.
+   * `dba_free_space` → `user_free_space`
+   * `dba_extents` → `user_extents`
 
 ---
 
-### 3. Analyze Fragmentation
+### How to interpret results (practical rules)
 
-```sql
-ANALYZE TABLE fragdemo COMPUTE STATISTICS;
+* **High free_mb with many free_extents**: free space exists but is fragmented. If `free_extents` >> (expected), you have many small holes.
+* **largest_free_extent_mb small**: even if free_mb is large, lack of contiguous free space may block large allocations.
+* **allocated smallest_extent_mb << largest_extent_mb**: inconsistent extent sizing may indicate mixed allocation strategies or multiple objects with different storage clauses.
+* **Actionable steps**
 
-SELECT table_name, blocks, empty_blocks, chain_cnt
-FROM user_tables
-WHERE table_name = 'FRAGDEMO';
-```
-
-* `BLOCKS` = total blocks allocated
-* `EMPTY_BLOCKS` = completely empty blocks
-* **If BLOCKS > actual needed rows → fragmentation**
+  * For tablespace fragmentation: `ALTER TABLESPACE <ts> COALESCE;` (for locally managed with uniform extents this may differ) or move large objects to a defragmented tablespace with `ALTER TABLE ... MOVE` or `CREATE TABLE AS SELECT` and swap names.
+  * For free space allocation issues: consider resizing files, adding datafiles, or coalescing extents.
+  * For indexes: `ALTER INDEX ... REBUILD` or `ALTER INDEX ... COALESCE` depending on need and downtime tolerance.
 
 ---
 
-### 4. Solve Fragmentation
+# 2 — Row chaining demonstration and detection
 
-Option 1: Move the table
+Row chaining happens when a row cannot fit into a single block and continues in another block (multi-block row). This typically appears for wide rows or when addresses are padded. Oracle exposes chaining counts via `USER_TABLES.CHAIN_CNT` after computing stats.
+
+### Step-by-step demo script (run as your normal user)
+
+**1. Clean slate**
 
 ```sql
-ALTER TABLE fragdemo MOVE;
+DROP TABLE student_chain PURGE;
 ```
 
-Option 2: Shrink space (if ASSM tablespace)
+**2. Create table**
 
 ```sql
-ALTER TABLE fragdemo ENABLE ROW MOVEMENT;
-ALTER TABLE fragdemo SHRINK SPACE;
+CREATE TABLE student_chain (
+    student_id      NUMBER,
+    student_name    VARCHAR2(20),
+    student_address VARCHAR2(4000)
+)
+TABLESPACE stud
+STORAGE (INITIAL 10K NEXT 20K);
 ```
 
----
-
-### 5. Re-Analyze
+**3. Insert sample rows**
 
 ```sql
-ANALYZE TABLE fragdemo COMPUTE STATISTICS;
-
-SELECT table_name, blocks, empty_blocks, chain_cnt
-FROM user_tables
-WHERE table_name = 'FRAGDEMO';
-```
-
-You should see **fewer blocks used** now.
-
----
-
-# **Part 2: Chained Row Demo**
-
-### 1. Create Table for Chaining
-
-We’ll use a **small block size effect** by forcing long rows.
-
-```sql
-DROP TABLE chain_demo PURGE;
-
-CREATE TABLE chain_demo (
-    id NUMBER,
-    big_col VARCHAR2(4000)
-);
-```
-
----
-
-### 2. Insert Rows that Cause Chaining
-
-```sql
-INSERT INTO chain_demo VALUES (1, RPAD('X', 4000, 'X'));
-INSERT INTO chain_demo VALUES (2, RPAD('Y', 4000, 'Y'));
+-- insert 20 rows (example)
+INSERT INTO student_chain VALUES (1, 'raj', 'ahmedabad');
+INSERT INTO student_chain VALUES (2, 'kunal', 'surat');
+-- ... continue until 20 rows ...
 COMMIT;
 ```
 
-Since Oracle block is usually 8K, and row overhead + other data doesn’t let 4000 bytes fit neatly, some rows will be **chained across multiple blocks**.
-
----
-
-### 3. Analyze Chained Rows
-
-First, update stats:
+**4. Force chaining by updating addresses to very large values**
 
 ```sql
-ANALYZE TABLE chain_demo COMPUTE STATISTICS;
+UPDATE student_chain
+SET student_address = RPAD('house no. 12, shree krupa ...', 4000, 'x')
+WHERE student_id = 1;
+-- repeat updates for many rows (IDs 1..20)
+COMMIT;
+```
+
+**5. Analyze and get chain count**
+
+```sql
+ANALYZE TABLE student_chain COMPUTE STATISTICS;
 
 SELECT table_name, chain_cnt
-FROM user_tables
-WHERE table_name = 'CHAIN_DEMO';
+FROM   user_tables
+WHERE  table_name = 'STUDENT_CHAIN';
 ```
 
-* `CHAIN_CNT` > 0 → some rows are chained/migrated.
-
+* `CHAIN_CNT` > 0 shows chained rows exist.
 ---
 
-### 4. Solve Chained Rows
+## Fixing chaining (recommended approach)
 
-* **Row Chaining** cannot always be avoided (row too big for a block).
-* Solutions:
+Create a new table with an appropriate column type and move data. Example converts large `VARCHAR2(4000)` to `CLOB` to avoid chaining for large text.
 
-  * Normalize design (split wide row into child tables).
-  * Use LOBs (`CLOB`, `BLOB`) for very large columns.
-  * Increase `PCTFREE` to reduce migration.
-
-For our test:
+**1. Create new table**
 
 ```sql
--- Redesign: move big column into a CLOB
-CREATE TABLE chain_demo2 (
-    id NUMBER,
-    big_col CLOB
-);
+CREATE TABLE student_chain_new (
+    student_id      NUMBER,
+    student_name    VARCHAR2(20),
+    student_address CLOB
+)
+TABLESPACE stud
+STORAGE (INITIAL 10K NEXT 20K);
+```
 
-INSERT INTO chain_demo2
-SELECT * FROM chain_demo;
+**2. Copy data**
+
+```sql
+INSERT INTO student_chain_new(student_id, student_name, student_address)
+SELECT student_id, student_name, student_address
+FROM   student_chain;
 COMMIT;
 ```
 
----
-
-### 5. Re-Analyze
+**3. Analyze and get chain count**
 
 ```sql
-ANALYZE TABLE chain_demo2 COMPUTE STATISTICS;
+ANALYZE TABLE student_chain_new COMPUTE STATISTICS;
 
 SELECT table_name, chain_cnt
-FROM user_tables
-WHERE table_name LIKE 'CHAIN_DEMO%';
+FROM   user_tables
+WHERE  table_name = 'STUDENT_CHAIN_NEW';
 ```
 
-* You’ll see **CHAIN\_CNT reduced**, since LOB storage avoids normal row chaining.
+**Expected result**
+
+* `STUDENT_CHAIN` shows a positive `CHAIN_CNT` (chaining present).
+* `STUDENT_CHAIN_NEW` should show `CHAIN_CNT` = 0 or reduced, indicating chaining resolved.
+
+**Alternative fixes**
+
+* Use `ALTER TABLE ... MOVE` to rebuild rows into contiguous blocks.
+* Use `SHRINK SPACE` for tables with row movement allowed, but be careful with LOBs and dependencies.
+* For indexes, `ALTER INDEX ... REBUILD`.
 
 ---
 
-✅ **Summary:**
+# How to analyze results and draw conclusions
 
-* **Fragmentation demo**: Insert → Delete → Analyze → Shrink → Re-analyze.
-* **Chained row demo**: Insert big rows → Analyze → Redesign with CLOB → Re-analyze.
+* **Tablespace fragmentation conclusion**
 
+  * If `free_mb` is low and `largest_free_extent_mb` is very small, your tablespace is severely fragmented. Conclusion: add datafile or coalesce extents or move big objects.
+  * If `free_mb` is high but split into many small `free_extents`, you still can run into allocation issues for big extents. Conclusion: coalesce or re-create large objects.
+
+* **Extent distribution conclusion**
+
+  * If `allocated` extents have many tiny `smallest_extent_mb` while `largest_extent_mb` is large, allocation sizes are inconsistent. Conclusion: review storage clauses, set uniform extent sizes where possible.
+
+* **Row chaining conclusion**
+
+  * If `chain_cnt` > 0 and column definitions allow very wide rows, you likely have chained rows. Conclusion: convert wide columns to `CLOB`, move rows with `ALTER TABLE ... MOVE` or recreate table and copy data.
+
+---
+
+## Final notes and practical tips
+
+* Always test fixes on a dev instance before production.
+* `ANALYZE TABLE ... COMPUTE STATISTICS` is okay for quick checks. 
+* Chaining can be introduced by very wide `VARCHAR2` or frequent updates that expand row length. Prefer LOBs for very large text.
+* For production cleanups schedule maintenance windows for `MOVE` or `REBUILD` operations.
 ---
