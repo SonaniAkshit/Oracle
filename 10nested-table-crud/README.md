@@ -1,145 +1,29 @@
+# 🎓 Object, Nested Table, and VARRAY in Oracle SQL
 
-# 📘 Nested Table + VARRAY Example in Oracle
-
-We’ll model a **student results system** where:
-
-* Each student has 3 subjects (nested table)
-* Each subject has up to 5 marks (VARRAY)
+This project demonstrates advanced **Oracle collection types** — **Object Type**, **Nested Table**, and **VARRAY** — to manage detailed student records.  
+Each student has personal info, a department object, a list of subjects, and a set of marks — all stored in structured collection types.
 
 ---
 
-## 1. What is a Nested Table?
+## 📘 Overview
 
-* A **Nested Table** is a collection in Oracle that can store **multiple elements of the same type**.
-* It can **grow dynamically** and is stored in a separate storage table internally.
-* Allows flexible modeling of one-to-many relationships, like a student having multiple subjects.
-
-**Example use case:** A student has multiple subjects; each subject can have multiple marks.
-
----
-
-## 2. What is a VARRAY?
-
-* A **VARRAY (Variable-Size Array)** stores **a fixed maximum number of elements**.
-* The order of elements is **preserved**.
-* Suitable for storing things like marks for a subject.
+This example shows how to:
+- Create an **object type** for department details.  
+- Use a **nested table** for department and subject lists.  
+- Use a **VARRAY** for marks.  
+- Build a main table (`student_results`) using these collection types.  
+- Perform **Insert, Update, Select, Delete** operations via PL/SQL procedures.
 
 ---
 
-## 3. Step 1: Create Nested Table Type for Subjects
+## 🔹Definition:
 
-```sql
--- Nested table for subjects
-create or replace type subject_list as table of varchar2(30);
-/
-```
+Write a procedure to update, delete and insert new element in nested table.
 
----
+## 🧱 Data Model
 
-## 4. Step 2: Create VARRAY Type for Marks
-
-```sql
--- VARRAY for marks (up to 5 marks per subject)
-create or replace type marks_list as varray(5) of number(3);
-/
-```
-
----
-
-## 5. Step 3: Create Student Table with Nested Table & VARRAY
-
-```sql
-create table student_results (
-    student_id number primary key,
-    name       varchar2(50),
-    subjects   subject_list,
-    marks      marks_list
-) nested table subjects store as subjects_storage
-TABLESPACE users
-STORAGE (INITIAL 5K NEXT 10K);
-```
-
-* `subjects` → nested table of subject names
-* `marks` → VARRAY of marks for each subject
-* Nested table is stored internally in `subjects_storage`
-
----
-
-## 6. Step 4: Simple CRUD Using SQL
-
-### 6.1 Insert
-
-```sql
-insert into student_results
-values (1, 'Akshit', subject_list('Math','Science','English'), marks_list(85,90,78));
-
-insert into student_results
-values (2, 'Hemal', subject_list('Physics','Chemistry','Math'), marks_list(80,70,75));
-```
-
----
-
-### 6.2 Select
-
-#### Full student table
-
-```sql
-select * from student_results;
-```
-
-#### Expand nested subjects
-
-```sql
-select s.name, t.column_value as subject
-from student_results s, table(s.subjects) t;
-```
-
-#### Expand marks
-
-```sql
-select s.name, m.column_value as mark
-from student_results s, table(s.marks) m;
-```
-
-#### Join subjects and marks (aligned)
-
-```sql
-select distinct s.name, sub.column_value as subject, m.column_value as mark
-from student_results s,
-     table(s.subjects) sub,
-     table(s.marks) m;
-```
-
-> Note: In this simple model, subjects and marks are parallel arrays. Ensure they have same length.
-
----
-
-### 6.3 Update
-
-```sql
-update student_results
-set subjects = subject_list('c','c++','python'),
-    marks = marks_list(95,85,90)
-where student_id = 1;
-```
-
----
-
-### 6.4 Delete
-
-```sql
-delete from student_results where student_id = 2;
-```
-
----
-
-### 7 CRUD with Stored Procedure
-
-**extend the `student_results` nested table** like the `book_authors` example and include **department and its course**, while keeping the **subjects and marks** structure.
-
----
-
-## 1. Create Object Type for Department
+### 1. Department Object
+Defines the structure for department information.
 
 ```sql
 CREATE OR REPLACE TYPE dept_obj AS OBJECT (
@@ -150,30 +34,36 @@ CREATE OR REPLACE TYPE dept_obj AS OBJECT (
 /
 ```
 
----
+### 2. Nested Table for Departments
 
-## 2. Create Nested Table Type for Departments
+Holds one or more `dept_obj` entries.
 
 ```sql
 CREATE OR REPLACE TYPE dept_nested AS TABLE OF dept_obj;
 /
 ```
 
----
+### 3. Nested Table for Subjects
 
-## 3. Create Nested Table for Subjects (existing)
+Stores a list of subjects per student.
 
 ```sql
 CREATE OR REPLACE TYPE subject_list AS TABLE OF VARCHAR2(30);
-/ 
+/
+```
 
+### 4. VARRAY for Marks
+
+Stores up to 5 marks per student.
+
+```sql
 CREATE OR REPLACE TYPE marks_list AS VARRAY(5) OF NUMBER(3);
-/ 
+/
 ```
 
 ---
 
-## 4. Create `student_results` Table with Nested Columns
+## 🧩 Main Table Definition
 
 ```sql
 CREATE TABLE student_results (
@@ -182,184 +72,167 @@ CREATE TABLE student_results (
     department dept_nested,
     subjects   subject_list,
     marks      marks_list
-) NESTED TABLE department STORE AS dept_storage
-  NESTED TABLE subjects STORE AS subjects_storage
-  TABLESPACE users
-  STORAGE (INITIAL 5K NEXT 10K);
+)
+NESTED TABLE department STORE AS dept_storage
+NESTED TABLE subjects STORE AS subjects_storage
+TABLESPACE users
+STORAGE (INITIAL 5K NEXT 10K);
 ```
 
-* `department` → nested table of `dept_obj` (can store multiple departments/courses per student)
-* `subjects` → nested table
-* `marks` → VARRAY
+### Explanation:
+
+* `department` and `subjects` are **nested tables** stored separately in dedicated storage tables.
+* `marks` is a **VARRAY**, stored inline with the main record.
+* `TABLESPACE` and `STORAGE` control where and how data is physically stored.
 
 ---
 
-## 5. Insert Student Procedure
+## ⚙️ Stored Procedures
+
+### 1. **Insert Student Result**
+
+Adds a new student with department info, subjects, and marks.
 
 ```sql
-CREATE OR REPLACE PROCEDURE insert_student_result(
-    p_student_id IN NUMBER,
-    p_name       IN VARCHAR2,
-    p_dept_id    IN NUMBER,
-    p_dept_name  IN VARCHAR2,
-    p_course     IN VARCHAR2,
-    p_sub1       IN VARCHAR2,
-    p_sub2       IN VARCHAR2,
-    p_sub3       IN VARCHAR2,
-    p_m1         IN NUMBER,
-    p_m2         IN NUMBER,
-    p_m3         IN NUMBER
-) AS
-    v_exists NUMBER;
-BEGIN
-    SELECT COUNT(*) INTO v_exists
-    FROM student_results
-    WHERE student_id = p_student_id;
+EXEC insert_student_result(1, 'Riya', 101, 'Computer Science', 'BCA', 'DBMS', 'DSA', 'SQL', 88, 90, 92);
+```
 
-    IF v_exists = 0 THEN
-        INSERT INTO student_results (student_id, name, department, subjects, marks)
-        VALUES (
-            p_student_id, 
-            p_name,
-            dept_nested(dept_obj(p_dept_id, p_dept_name, p_course)),
-            subject_list(p_sub1, p_sub2, p_sub3),
-            marks_list(p_m1, p_m2, p_m3)
-        );
+**Output:**
 
-        DBMS_OUTPUT.PUT_LINE('New student inserted with id ' || p_student_id);
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('Student already exists with id ' || p_student_id);
-    END IF;
-END;
-/
+```
+new student inserted with id 1
 ```
 
 ---
 
-## 6. Update Student Procedure
+### 2. **Update Student Result**
+
+Updates department, subjects, and marks for an existing student.
 
 ```sql
-CREATE OR REPLACE PROCEDURE update_student_result(
-    p_student_id IN NUMBER,
-    p_dept_id    IN NUMBER,
-    p_dept_name  IN VARCHAR2,
-    p_course     IN VARCHAR2,
-    p_sub1       IN VARCHAR2,
-    p_sub2       IN VARCHAR2,
-    p_sub3       IN VARCHAR2,
-    p_m1         IN NUMBER,
-    p_m2         IN NUMBER,
-    p_m3         IN NUMBER
-) AS
-    v_exists NUMBER;
-BEGIN
-    SELECT COUNT(*) INTO v_exists
-    FROM student_results
-    WHERE student_id = p_student_id;
+EXEC update_student_result(1, 101, 'Computer Science', 'BCA', 'DBMS', 'AI', 'Python', 90, 95, 93);
+```
 
-    IF v_exists = 0 THEN
-        DBMS_OUTPUT.PUT_LINE('Student not found with id ' || p_student_id);
-    ELSE
-        UPDATE student_results
-        SET department = dept_nested(dept_obj(p_dept_id, p_dept_name, p_course)),
-            subjects   = subject_list(p_sub1, p_sub2, p_sub3),
-            marks      = marks_list(p_m1, p_m2, p_m3)
-        WHERE student_id = p_student_id;
+**Output:**
 
-        DBMS_OUTPUT.PUT_LINE('Student updated for id ' || p_student_id);
-    END IF;
-END;
-/
+```
+student updated for id 1
 ```
 
 ---
 
-## 7. Select Student Procedure
+### 3. **Select Student Result**
+
+Displays department, subjects, and marks for a student by name.
 
 ```sql
-CREATE OR REPLACE PROCEDURE select_student_result(
-    p_name IN VARCHAR2
-) AS
-    v_dept dept_nested;
-    v_subjects subject_list;
-    v_marks marks_list;
-BEGIN
-    SELECT department, subjects, marks
-    INTO v_dept, v_subjects, v_marks
-    FROM student_results
-    WHERE name = p_name;
+EXEC select_student_result('Riya');
+```
 
-    DBMS_OUTPUT.PUT_LINE('Student: ' || p_name);
-    
-    -- Departments
-    FOR i IN 1 .. v_dept.COUNT LOOP
-        DBMS_OUTPUT.PUT_LINE('  Dept: ' || v_dept(i).dept_name || ' - Course: ' || v_dept(i).course);
-    END LOOP;
+**Output:**
 
-    -- Subjects and Marks
-    FOR i IN 1 .. v_subjects.COUNT LOOP
-        DBMS_OUTPUT.PUT_LINE('  Subject: ' || v_subjects(i) || ' - Mark: ' || v_marks(i));
-    END LOOP;
-
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        DBMS_OUTPUT.PUT_LINE('Student not found with name ' || p_name);
-END;
-/
+```
+student: Riya
+  dept: Computer Science - course: BCA
+  subject: DBMS - mark: 90
+  subject: AI - mark: 95
+  subject: Python - mark: 93
 ```
 
 ---
 
-## 8. Delete Student Procedure
+### 4. **Delete Student Result**
+
+Deletes a student record by name.
 
 ```sql
-CREATE OR REPLACE PROCEDURE delete_student_result(
-    p_name IN VARCHAR2
-) AS
-BEGIN
-    DELETE FROM student_results WHERE name = p_name;
+EXEC delete_student_result('Riya');
+```
 
-    IF SQL%ROWCOUNT > 0 THEN
-        DBMS_OUTPUT.PUT_LINE('Student ' || p_name || ' deleted.');
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('No student found with name ' || p_name);
-    END IF;
-END;
-/
+**Output:**
+
+```
+student Riya deleted.
 ```
 
 ---
 
-## 9. Example Execution Using `&` Prompts
+## 🧠 How to Run This Code
+
+### Requirements
+
+* Oracle Database (supports PL/SQL, Nested Tables, and Object Types)
+* SQL*Plus or Oracle SQL Developer
+
+### Steps
+
+1. Open **SQL Developer** or **SQL*Plus**.
+2. Connect to your Oracle user/schema.
+3. Copy and execute the entire script.
+4. Enable server output:
+
+   ```sql
+   SET SERVEROUTPUT ON;
+   ```
+5. Run procedures interactively:
+
+   ```sql
+   EXEC insert_student_result(&student_id, '&name', &dept_id, '&dept_name', '&course', '&sub1', '&sub2', '&sub3', &m1, &m2, &m3);
+   EXEC update_student_result(&student_id, &dept_id, '&dept_name', '&course', '&sub1', '&sub2', '&sub3', &m1, &m2, &m3);
+   EXEC select_student_result('&name');
+   EXEC delete_student_result('&name');
+   ```
+
+   Each `&` prompts you to enter input at runtime.
+
+---
+
+## 📂 Example Workflow
 
 ```sql
--- Insert student (runtime input)
-exec insert_student_result(
-    &student_id, '&name', &dept_id, '&dept_name', '&course',
-    '&sub1', '&sub2', '&sub3', &m1, &m2, &m3
-);
+-- Insert
+EXEC insert_student_result(101, 'Akshit', 10, 'IT', 'B.Tech', 'DBMS', 'Networking', 'AI', 85, 88, 90);
 
--- Update student
-exec update_student_result(
-    &student_id, &dept_id, '&dept_name', '&course',
-    '&sub1', '&sub2', '&sub3', &m1, &m2, &m3
-);
+-- Update
+EXEC update_student_result(101, 10, 'IT', 'B.Tech', 'DBMS', 'Cloud', 'ML', 90, 93, 95);
 
--- Select student by name
-exec select_student_result('&name');
+-- Select
+EXEC select_student_result('Akshit');
 
--- Delete student by name
-exec delete_student_result('&name');
+-- Delete
+EXEC delete_student_result('Akshit');
 ```
 
 ---
 
-✅ **This version includes:**
+## 🧾 Notes
 
-1. Nested table for **departments + course**
-2. Nested table for **subjects**
-3. VARRAY for **marks**
-4. **Insert, Update, Select, Delete** procedures
-5. Runtime input using `&` substitution variables
+* The **department** and **subjects** are stored as **nested tables** in separate storage structures.
+* The **marks** are stored inline using a **VARRAY** of up to 5 numbers.
+* You can modify the collection sizes or add fields (like semester, grade, etc.) as needed.
+* Make sure `SERVEROUTPUT` is ON to see procedure messages.
+* Ideal for learning **Oracle Object-Relational features** and **advanced PL/SQL**.
+
+---
+
+## 🏁 Summary
+
+| Procedure               | Purpose                     | Example Call                                                                              |
+| ----------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| `insert_student_result` | Insert a new student record | `EXEC insert_student_result(1, 'John', 101, 'CS', 'BCA', 'SQL', 'AI', 'ML', 90, 95, 92);` |
+| `update_student_result` | Update student details      | `EXEC update_student_result(1, 101, 'CS', 'BCA', 'SQL', 'Python', 'AI', 88, 90, 91);`     |
+| `select_student_result` | Retrieve student info       | `EXEC select_student_result('John');`                                                     |
+| `delete_student_result` | Remove student record       | `EXEC delete_student_result('John');`                                                     |
+
+---
+
+## 🧩 Learning Outcomes
+
+By completing this project, you’ll understand:
+
+* How to define and use **Object Types** in Oracle.
+* How **Nested Tables** differ from **VARRAYs**.
+* How to combine multiple collection types in a single table.
+* How to perform CRUD operations on complex data structures using PL/SQL.
 
 ---
