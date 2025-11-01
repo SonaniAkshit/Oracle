@@ -1,38 +1,50 @@
-# 📘 VARRAY in Oracle – With Examples and CRUD using Procedures
+# 📘 VARRAY in Oracle SQL
 
-## 1. What is a VARRAY?
-
-* **VARRAY (Variable-Size Array)** is an Oracle collection type.
-* It allows you to store a **fixed maximum number** of elements (like an array in programming).
-* All elements must be of the **same data type** (e.g., numbers, strings).
-* Unlike nested tables, a VARRAY preserves the **order** of elements.
-
-👉 Example use case:
-A student table where each student has up to 5 subject marks. Instead of creating 5 separate columns, we can store them in a single VARRAY column.
+This project demonstrates how to use **VARRAY (Variable-size array)** data type in Oracle SQL to store and manage multiple marks for each student.
+The code defines a **custom collection type**, creates a table that uses it, and provides **stored procedures** for inserting, updating, retrieving, and deleting student records.
 
 ---
 
-## 2. Creating a VARRAY Type
+## 📖 What is a VARRAY?
 
-First, create a VARRAY type to store marks:
+A **VARRAY (Variable-size Array)** is an Oracle collection type that can hold a fixed maximum number of elements in a **single database column**.
+It allows you to store multiple related values together, such as a list of marks, phone numbers, or scores.
+
+### ✅ Key Points:
+
+* VARRAY must have a **maximum size** defined at creation.
+* Elements are **stored in order** (index starts from 1).
+* Useful when you know the maximum number of items and want to store them together as one field.
+
+### 🔹Definition:
+
+Write a procedure to update, delete and insert new element in varray.
+
+### Example:
 
 ```sql
--- Create a VARRAY type for 5 marks
-create or REPLACE type marks_varray is varray(5) of number(3);
+TYPE marks_varray IS VARRAY(5) OF NUMBER(3);
+```
+
+This defines a `marks_varray` that can store **up to 5 numbers**, each having up to **3 digits**.
+
+---
+
+## 🧩 Database Setup
+
+### 1. Create the VARRAY Type
+
+```sql
+CREATE OR REPLACE TYPE marks_varray IS VARRAY(5) OF NUMBER(3);
 /
 ```
 
-This means: each student can have **up to 5 marks** stored as numbers.
+This defines a reusable data type for holding up to five marks.
 
----
-
-## 3. Creating a Table with VARRAY
-
-Now, use the VARRAY type in a table:
+### 2. Create the Student Table
 
 ```sql
-CREATE TABLE student
-(
+CREATE TABLE student (
     roll_no NUMBER PRIMARY KEY,
     name    VARCHAR2(50),
     marks   marks_varray
@@ -41,171 +53,146 @@ TABLESPACE users
 STORAGE (INITIAL 5K NEXT 10K);
 ```
 
-Here:
-
-* `roll_no` → student ID
-* `name` → student name
-* `marks` → array of marks (up to 5)
+The `marks` column is of type `marks_varray`.
+Each record will store a student’s roll number, name, and a set of five marks.
 
 ---
 
-## 4. Simple CRUD Operations
+## ⚙️ Stored Procedures
 
-### Insert
+### 1. **Insert Student**
+
+Adds a new student with 5 marks. If the roll number already exists, it skips insertion.
 
 ```sql
--- Insert student with 3 marks
-insert into student values (1, 'Akshit', marks_varray(85, 90, 78));
-
--- Insert student with full 5 marks
-insert into student values (2, 'Hemal', marks_varray(88, 76, 92, 80, 95));
+EXEC insert_student(1, 'Akshit', 78, 85, 92, 88, 90);
 ```
 
-### Select
+**Output Example:**
 
-```sql
--- See all data
-select * from student;
-
--- Show one student’s marks
-select s.name, column_value as mark
-from student s, table(s.marks)
-where s.roll_no = 1;
 ```
-
-### Update
-
-```sql
--- Update full marks array
-update student
-set marks = marks_varray(90, 85, 88, 92, 80)
-where roll_no = 1;
-```
-
-### Delete
-
-```sql
--- Delete a student
-delete from student where roll_no = 2;
+new student inserted with roll no 1
 ```
 
 ---
 
-## 5. Complete CRUD for `student` with `varray`
+### 2. **Update Student Marks**
+
+Updates all 5 marks for an existing student.
 
 ```sql
--- 1. INSERT student with 5 marks
-create or replace procedure insert_student(
-    p_roll_no in number,
-    p_name    in varchar2,
-    p_m1      in number,
-    p_m2      in number,
-    p_m3      in number,
-    p_m4      in number,
-    p_m5      in number
-) as
-    v_exists number;
-begin
-    select count(*) into v_exists
-    from student
-    where roll_no = p_roll_no;
-
-    if v_exists = 0 then
-        insert into student (roll_no, name, marks)
-        values (p_roll_no, p_name, marks_varray(p_m1, p_m2, p_m3, p_m4, p_m5));
-        dbms_output.put_line('new student inserted with roll no ' || p_roll_no);
-    else
-        dbms_output.put_line('student already exists with roll no ' || p_roll_no);
-    end if;
-end;
-/
+EXEC update_student(1, 80, 89, 90, 92, 88);
 ```
 
-```sql
--- 2. UPDATE all 5 marks for existing student
-create or replace procedure update_student(
-    p_roll_no in number,
-    p_m1      in number,
-    p_m2      in number,
-    p_m3      in number,
-    p_m4      in number,
-    p_m5      in number
-) as
-    v_exists number;
-begin
-    select count(*) into v_exists
-    from student
-    where roll_no = p_roll_no;
+**Output Example:**
 
-    if v_exists = 0 then
-        dbms_output.put_line('student not found with roll no ' || p_roll_no);
-    else
-        update student
-        set marks = marks_varray(p_m1, p_m2, p_m3, p_m4, p_m5)
-        where roll_no = p_roll_no;
-
-        dbms_output.put_line('marks updated for roll no ' || p_roll_no);
-    end if;
-end;
-/
 ```
-
-```sql
--- 3. SELECT marks by student name
-create or replace procedure select_student(
-    p_name in varchar2
-) as
-    v_marks marks_varray;
-begin
-    select marks into v_marks
-    from student
-    where name = p_name;
-
-    dbms_output.put_line('marks for student ' || p_name || ':');
-    for i in 1 .. v_marks.count loop
-        dbms_output.put_line('  subject ' || i || ': ' || nvl(to_char(v_marks(i)), 'null'));
-    end loop;
-
-exception
-    when no_data_found then
-        dbms_output.put_line('student not found with name ' || p_name);
-end;
-/
-```
-
-```sql
--- 4. DELETE student by name
-create or replace procedure delete_student(
-    p_name in varchar2
-) as
-begin
-    delete from student where name = p_name;
-
-    if sql%rowcount > 0 then
-        dbms_output.put_line('student ' || p_name || ' deleted.');
-    else
-        dbms_output.put_line('no student found with name ' || p_name);
-    end if;
-end;
-/
+marks updated for roll no 1
 ```
 
 ---
 
-## ✅ How to Run
+### 3. **Select Student Marks by Name**
+
+Displays all marks of a student by their name.
 
 ```sql
--- Insert student (prompts for input)
-exec insert_student(&roll_no, '&name', &m1, &m2, &m3, &m4, &m5);
+EXEC select_student('Akshit');
+```
+
+**Output Example:**
+
+```
+marks for student Akshit:
+  subject 1: 80
+  subject 2: 89
+  subject 3: 90
+  subject 4: 92
+  subject 5: 88
+```
+
+---
+
+### 4. **Delete Student by Name**
+
+Removes a student’s record from the table.
+
+```sql
+EXEC delete_student('Akshit');
+```
+
+**Output Example:**
+
+```
+student Akshit deleted.
+```
+
+---
+
+## 🧠 How to Run This Code
+
+### Prerequisites:
+
+* Oracle Database (any version supporting PL/SQL)
+* SQL*Plus or SQL Developer
+
+### Steps:
+
+1. **Open SQL*Plus or SQL Developer.**
+2. **Connect** to your Oracle user/schema.
+3. **Copy and paste** the entire script into the editor and execute it.
+4. **Enable output** (in SQL*Plus):
+
+   ```sql
+   SET SERVEROUTPUT ON;
+   ```
+5. **Run the procedures** interactively using:
+
+   ```sql
+   EXEC insert_student(&roll_no, '&name', &m1, &m2, &m3, &m4, &m5);
+   EXEC update_student(&roll_no, &m1, &m2, &m3, &m4, &m5);
+   EXEC select_student('&name');
+   EXEC delete_student('&name');
+   ```
+
+   The ampersands (`&`) prompt you for input values during execution.
+
+---
+
+## 📂 Example Workflow
+
+```sql
+-- Insert a new record
+EXEC insert_student(101, 'Ram', 76, 85, 89, 91, 87);
 
 -- Update marks
-exec update_student(&roll_no, &m1, &m2, &m3, &m4, &m5);
+EXEC update_student(101, 80, 88, 90, 93, 89);
 
--- Select marks by name
-exec select_student('&name');
+-- View marks
+EXEC select_student('Ram');
 
--- Delete student by name
-exec delete_student('&name');
+-- Delete record
+EXEC delete_student('Ram');
 ```
+
+---
+
+## 🧾 Notes
+
+* The `marks_varray` can store **exactly 5 marks** per student.
+* If you need more or fewer marks, modify the `VARRAY(5)` size and related procedures.
+* `DBMS_OUTPUT.PUT_LINE` displays messages; ensure `SERVEROUTPUT` is enabled.
+* This script is ideal for **learning PL/SQL collections** and **procedural database programming**.
+
+---
+
+## 🏁 Summary
+
+| Procedure        | Purpose                           | Example Call                                          |
+| ---------------- | --------------------------------- | ----------------------------------------------------- |
+| `insert_student` | Insert a new student record       | `EXEC insert_student(1, 'John', 90, 85, 88, 92, 95);` |
+| `update_student` | Update marks for existing student | `EXEC update_student(1, 91, 86, 89, 93, 96);`         |
+| `select_student` | View marks by student name        | `EXEC select_student('John');`                        |
+| `delete_student` | Delete student record             | `EXEC delete_student('John');`                        |
 
 ---
